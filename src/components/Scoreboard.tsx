@@ -178,11 +178,11 @@ const Scoreboard = ({ format, onBack }: ScoreboardProps) => {
       </div>
 
       {/* Header */}
-      <div className="mb-4 w-full max-w-lg rounded-xl bg-primary py-4 text-center">
-        <h1 className="flex items-center justify-center gap-3 text-2xl font-bold text-primary-foreground">
+      <div className="mb-4 w-full max-w-lg rounded-xl bg-card py-4 text-center">
+        <h1 className="flex items-center justify-center gap-3 text-2xl font-bold text-foreground">
           <span className="text-3xl">⚽</span>
           Scoreboard
-          <span className="ml-2 text-base font-normal opacity-80">
+          <span className="ml-2 text-base font-normal text-muted-foreground">
             {format.ageGroup} {format.format}
           </span>
         </h1>
@@ -194,7 +194,7 @@ const Scoreboard = ({ format, onBack }: ScoreboardProps) => {
           {getPeriodLabel()}
         </p>
         <div
-          className={`mb-4 text-center font-score text-7xl tracking-wider text-foreground ${
+          className={`mb-4 text-center font-score text-5xl tracking-wider text-foreground ${
             isTimerEnded ? 'animate-timer-flash' : ''
           }`}
         >
@@ -204,10 +204,9 @@ const Scoreboard = ({ format, onBack }: ScoreboardProps) => {
         {/* Timer Controls */}
         <div className="flex justify-center gap-3">
           <Button
-            variant="outline"
             onClick={() => setIsRunning(!isRunning)}
             disabled={timeRemaining === 0}
-            className="gap-2 border-primary/50 hover:bg-primary/20"
+            className="gap-2 bg-primary text-primary-foreground hover:bg-primary/80"
           >
             {isRunning ? (
               <>
@@ -220,17 +219,15 @@ const Scoreboard = ({ format, onBack }: ScoreboardProps) => {
             )}
           </Button>
           <Button
-            variant="default"
             onClick={handleNextPeriod}
             disabled={currentPeriod >= format.periodCount}
-            className="gap-2 bg-accent text-accent-foreground hover:bg-accent/90"
+            className="gap-2 bg-accent text-accent-foreground hover:bg-accent/80"
           >
             <SkipForward className="h-4 w-4" /> Next
           </Button>
           <Button
-            variant="destructive"
             onClick={handleReset}
-            className="gap-2"
+            className="gap-2 bg-destructive text-destructive-foreground hover:bg-destructive/80"
           >
             <RotateCcw className="h-4 w-4" /> Reset
           </Button>
