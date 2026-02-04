@@ -1,11 +1,16 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { GameFormat } from '@/types/game';
-import { Play, Pause, RotateCcw, ChevronRight, ArrowLeft, Volume2, VolumeX } from 'lucide-react';
+import { Play, Pause, RotateCcw, SkipForward, ArrowLeft, Volume2, VolumeX } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 interface ScoreboardProps {
   format: GameFormat;
   onBack: () => void;
+}
+
+interface PeriodScore {
+  home: number;
+  away: number;
 }
 
 const Scoreboard = ({ format, onBack }: ScoreboardProps) => {
@@ -18,6 +23,9 @@ const Scoreboard = ({ format, onBack }: ScoreboardProps) => {
   const [isRunning, setIsRunning] = useState(false);
   const [isAudioEnabled, setIsAudioEnabled] = useState(true);
   const [isTimerEnded, setIsTimerEnded] = useState(false);
+  const [periodScores, setPeriodScores] = useState<PeriodScore[]>(
+    Array.from({ length: format.periodCount }, () => ({ home: 0, away: 0 }))
+  );
   const audioContextRef = useRef<AudioContext | null>(null);
   const intervalRef = useRef<number | null>(null);
 
@@ -86,13 +94,18 @@ const Scoreboard = ({ format, onBack }: ScoreboardProps) => {
 
   const getPeriodLabel = () => {
     if (format.periodName === 'quarter') {
-      const labels = ['1st', '2nd', '3rd', '4th'];
-      return `${labels[currentPeriod - 1] || currentPeriod} Quarter`;
+      return `Quarter ${currentPeriod} / ${format.periodCount}`;
     }
     if (format.periodName === 'half') {
-      return currentPeriod === 1 ? '1st Half' : '2nd Half';
+      return `Half ${currentPeriod} / ${format.periodCount}`;
     }
-    return `Period ${currentPeriod}`;
+    return `Period ${currentPeriod} / ${format.periodCount}`;
+  };
+
+  const getShortPeriodLabel = (index: number) => {
+    if (format.periodName === 'quarter') return `Q${index + 1}`;
+    if (format.periodName === 'half') return `H${index + 1}`;
+    return `P${index + 1}`;
   };
 
   const handleNextPeriod = () => {
@@ -111,22 +124,39 @@ const Scoreboard = ({ format, onBack }: ScoreboardProps) => {
     setAwayScore(0);
     setIsRunning(false);
     setIsTimerEnded(false);
+    setPeriodScores(Array.from({ length: format.periodCount }, () => ({ home: 0, away: 0 })));
   };
 
   const adjustScore = (team: 'home' | 'away', delta: number) => {
+    const periodIndex = currentPeriod - 1;
+    
     if (team === 'home') {
-      setHomeScore((prev) => Math.max(0, prev + delta));
+      const newPeriodScore = Math.max(0, periodScores[periodIndex].home + delta);
+      const scoreDiff = newPeriodScore - periodScores[periodIndex].home;
+      
+      setPeriodScores((prev) => {
+        const updated = [...prev];
+        updated[periodIndex] = { ...updated[periodIndex], home: newPeriodScore };
+        return updated;
+      });
+      setHomeScore((prev) => Math.max(0, prev + scoreDiff));
     } else {
-      setAwayScore((prev) => Math.max(0, prev + delta));
+      const newPeriodScore = Math.max(0, periodScores[periodIndex].away + delta);
+      const scoreDiff = newPeriodScore - periodScores[periodIndex].away;
+      
+      setPeriodScores((prev) => {
+        const updated = [...prev];
+        updated[periodIndex] = { ...updated[periodIndex], away: newPeriodScore };
+        return updated;
+      });
+      setAwayScore((prev) => Math.max(0, prev + scoreDiff));
     }
   };
 
-  const isGameOver = currentPeriod === format.periodCount && timeRemaining === 0;
-
   return (
-    <div className="flex min-h-screen flex-col bg-background p-4">
-      {/* Header */}
-      <div className="mb-6 flex items-center justify-between">
+    <div className="flex min-h-screen flex-col items-center bg-background px-4 py-6">
+      {/* Back and Audio buttons */}
+      <div className="mb-4 flex w-full max-w-lg items-center justify-between">
         <Button
           variant="ghost"
           size="sm"
@@ -137,110 +167,101 @@ const Scoreboard = ({ format, onBack }: ScoreboardProps) => {
           Back
         </Button>
         
-        <div className="flex items-center gap-2">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => setIsAudioEnabled(!isAudioEnabled)}
+          className="text-muted-foreground hover:text-foreground"
+        >
+          {isAudioEnabled ? <Volume2 className="h-5 w-5" /> : <VolumeX className="h-5 w-5" />}
+        </Button>
+      </div>
+
+      {/* Header */}
+      <div className="mb-4 w-full max-w-lg rounded-xl bg-primary py-4 text-center">
+        <h1 className="flex items-center justify-center gap-3 text-2xl font-bold text-primary-foreground">
+          <span className="text-3xl">⚽</span>
+          Scoreboard
+          <span className="ml-2 text-base font-normal opacity-80">
+            {format.ageGroup} {format.format}
+          </span>
+        </h1>
+      </div>
+
+      {/* Timer Section */}
+      <div className="mb-4 w-full max-w-lg rounded-xl bg-card p-6">
+        <p className="mb-2 text-center text-sm text-muted-foreground">
+          {getPeriodLabel()}
+        </p>
+        <div
+          className={`mb-4 text-center font-score text-7xl tracking-wider text-foreground ${
+            isTimerEnded ? 'animate-timer-flash' : ''
+          }`}
+        >
+          {formatTime(timeRemaining)}
+        </div>
+        
+        {/* Timer Controls */}
+        <div className="flex justify-center gap-3">
           <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setIsAudioEnabled(!isAudioEnabled)}
-            className="text-muted-foreground hover:text-foreground"
+            variant="outline"
+            onClick={() => setIsRunning(!isRunning)}
+            disabled={timeRemaining === 0}
+            className="gap-2 border-primary/50 hover:bg-primary/20"
           >
-            {isAudioEnabled ? <Volume2 className="h-5 w-5" /> : <VolumeX className="h-5 w-5" />}
+            {isRunning ? (
+              <>
+                <Pause className="h-4 w-4" /> Pause
+              </>
+            ) : (
+              <>
+                <Play className="h-4 w-4" /> Play
+              </>
+            )}
+          </Button>
+          <Button
+            variant="default"
+            onClick={handleNextPeriod}
+            disabled={currentPeriod >= format.periodCount}
+            className="gap-2 bg-accent text-accent-foreground hover:bg-accent/90"
+          >
+            <SkipForward className="h-4 w-4" /> Next
+          </Button>
+          <Button
+            variant="destructive"
+            onClick={handleReset}
+            className="gap-2"
+          >
+            <RotateCcw className="h-4 w-4" /> Reset
           </Button>
         </div>
       </div>
 
-      {/* Period Indicator */}
-      <div className="mb-6 flex items-center justify-center gap-2">
-        <span className="rounded-full bg-primary/20 px-4 py-2 text-sm font-semibold text-primary">
-          {format.ageGroup} {format.format}
-        </span>
-        <span className="rounded-full bg-accent/20 px-4 py-2 text-sm font-semibold text-accent">
-          {getPeriodLabel()}
-        </span>
-      </div>
-
-      {/* Period Progress */}
-      <div className="mb-8 flex justify-center gap-2">
-        {Array.from({ length: format.periodCount }).map((_, i) => (
-          <div
-            key={i}
-            className={`h-2 w-8 rounded-full transition-colors ${
-              i < currentPeriod
-                ? 'bg-primary'
-                : i === currentPeriod - 1
-                ? 'bg-primary animate-pulse'
-                : 'bg-muted'
-            }`}
-          />
-        ))}
-      </div>
-
-      {/* Timer */}
-      <div className="mb-8 flex flex-col items-center">
-        <div
-          className={`rounded-2xl border-4 px-8 py-4 transition-all ${
-            isTimerEnded
-              ? 'animate-timer-flash border-destructive bg-destructive/20'
-              : isRunning
-              ? 'animate-pulse-glow border-primary bg-primary/10'
-              : 'border-border bg-card'
-          }`}
-        >
-          <span className="font-score text-6xl tracking-wider text-foreground sm:text-7xl">
-            {formatTime(timeRemaining)}
-          </span>
-        </div>
-      </div>
-
-      {/* Timer Controls */}
-      <div className="mb-8 flex justify-center gap-4">
-        <Button
-          size="lg"
-          variant={isRunning ? 'secondary' : 'default'}
-          onClick={() => setIsRunning(!isRunning)}
-          disabled={timeRemaining === 0}
-          className="gap-2 px-8"
-        >
-          {isRunning ? (
-            <>
-              <Pause className="h-5 w-5" /> Pause
-            </>
-          ) : (
-            <>
-              <Play className="h-5 w-5" /> Start
-            </>
-          )}
-        </Button>
-      </div>
-
-      {/* Scores */}
-      <div className="mb-8 grid grid-cols-2 gap-4">
+      {/* Score Section */}
+      <div className="mb-4 grid w-full max-w-lg grid-cols-2 gap-3">
         {/* Home Team */}
-        <div className="flex flex-col items-center rounded-2xl border border-border bg-card p-4">
+        <div className="rounded-xl border-2 border-score-home/50 bg-card p-4">
           <input
             type="text"
             value={homeName}
             onChange={(e) => setHomeName(e.target.value.toUpperCase())}
-            className="mb-2 w-full bg-transparent text-center text-sm font-semibold uppercase tracking-wide text-score-home outline-none focus:underline"
+            className="mb-2 w-full bg-transparent text-center text-sm font-semibold uppercase tracking-wide text-muted-foreground outline-none focus:text-foreground"
             maxLength={12}
           />
-          <div className="mb-4 font-score text-5xl text-foreground sm:text-6xl">
+          <div className="mb-4 text-center font-score text-6xl text-score-home">
             {homeScore}
           </div>
           <div className="flex gap-2">
             <Button
               variant="outline"
-              size="icon"
               onClick={() => adjustScore('home', -1)}
-              className="h-12 w-12 text-lg font-bold"
+              className="flex-1 border-border text-lg font-bold hover:bg-secondary"
             >
               −
             </Button>
             <Button
-              variant="default"
-              size="icon"
               onClick={() => adjustScore('home', 1)}
-              className="h-12 w-12 text-lg font-bold"
+              className="flex-1 bg-score-home text-lg font-bold text-white hover:bg-score-home/80"
             >
               +
             </Button>
@@ -248,31 +269,28 @@ const Scoreboard = ({ format, onBack }: ScoreboardProps) => {
         </div>
 
         {/* Away Team */}
-        <div className="flex flex-col items-center rounded-2xl border border-border bg-card p-4">
+        <div className="rounded-xl border-2 border-score-away/50 bg-card p-4">
           <input
             type="text"
             value={awayName}
             onChange={(e) => setAwayName(e.target.value.toUpperCase())}
-            className="mb-2 w-full bg-transparent text-center text-sm font-semibold uppercase tracking-wide text-score-away outline-none focus:underline"
+            className="mb-2 w-full bg-transparent text-center text-sm font-semibold uppercase tracking-wide text-muted-foreground outline-none focus:text-foreground"
             maxLength={12}
           />
-          <div className="mb-4 font-score text-5xl text-foreground sm:text-6xl">
+          <div className="mb-4 text-center font-score text-6xl text-score-away">
             {awayScore}
           </div>
           <div className="flex gap-2">
             <Button
               variant="outline"
-              size="icon"
               onClick={() => adjustScore('away', -1)}
-              className="h-12 w-12 text-lg font-bold"
+              className="flex-1 border-border text-lg font-bold hover:bg-secondary"
             >
               −
             </Button>
             <Button
-              variant="default"
-              size="icon"
               onClick={() => adjustScore('away', 1)}
-              className="h-12 w-12 text-lg font-bold"
+              className="flex-1 bg-score-away text-lg font-bold text-white hover:bg-score-away/80"
             >
               +
             </Button>
@@ -280,37 +298,30 @@ const Scoreboard = ({ format, onBack }: ScoreboardProps) => {
         </div>
       </div>
 
-      {/* Game Controls */}
-      <div className="flex justify-center gap-4">
-        <Button
-          variant="outline"
-          onClick={handleReset}
-          className="gap-2"
-        >
-          <RotateCcw className="h-4 w-4" />
-          Reset Game
-        </Button>
-        {!isGameOver && (
-          <Button
-            variant="secondary"
-            onClick={handleNextPeriod}
-            disabled={currentPeriod >= format.periodCount}
-            className="gap-2"
-          >
-            Next {format.periodName === 'half' ? 'Half' : format.periodName === 'quarter' ? 'Quarter' : 'Period'}
-            <ChevronRight className="h-4 w-4" />
-          </Button>
-        )}
-      </div>
-
-      {/* Game Over Message */}
-      {isGameOver && (
-        <div className="mt-6 text-center">
-          <span className="inline-block rounded-full bg-accent/20 px-6 py-3 text-lg font-bold text-accent">
-            🎉 Game Complete!
-          </span>
+      {/* Period Breakdown */}
+      <div className="w-full max-w-lg rounded-xl bg-card p-4">
+        <h3 className="mb-4 text-center text-sm font-semibold text-muted-foreground">
+          {format.periodName === 'quarter' ? 'Quarter' : format.periodName === 'half' ? 'Half' : 'Period'} Breakdown
+        </h3>
+        <div className="grid gap-2" style={{ gridTemplateColumns: `repeat(${Math.min(format.periodCount, 6)}, 1fr)` }}>
+          {periodScores.map((score, index) => (
+            <div
+              key={index}
+              className={`rounded-lg border p-3 text-center transition-colors ${
+                index === currentPeriod - 1
+                  ? 'border-primary bg-primary/10'
+                  : 'border-border bg-secondary/50'
+              }`}
+            >
+              <div className="mb-1 text-xs font-semibold text-muted-foreground">
+                {getShortPeriodLabel(index)}
+              </div>
+              <div className="text-sm font-bold text-score-home">{score.home}</div>
+              <div className="text-sm font-bold text-score-away">{score.away}</div>
+            </div>
+          ))}
         </div>
-      )}
+      </div>
     </div>
   );
 };

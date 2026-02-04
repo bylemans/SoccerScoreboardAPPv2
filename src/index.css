@@ -8,42 +8,42 @@ All colors MUST be HSL.
 
 @layer base {
   :root {
-    /* Dark stadium theme - always dark mode */
-    --background: 220 20% 8%;
+    /* Dark green stadium theme */
+    --background: 150 20% 10%;
     --foreground: 0 0% 98%;
 
-    --card: 220 18% 12%;
+    --card: 150 25% 15%;
     --card-foreground: 0 0% 98%;
 
-    --popover: 220 18% 12%;
+    --popover: 150 25% 15%;
     --popover-foreground: 0 0% 98%;
 
     /* Soccer green primary */
-    --primary: 142 70% 45%;
+    --primary: 142 70% 40%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 220 15% 18%;
+    --secondary: 150 20% 20%;
     --secondary-foreground: 0 0% 98%;
 
-    --muted: 220 15% 20%;
-    --muted-foreground: 220 10% 60%;
+    --muted: 150 15% 25%;
+    --muted-foreground: 150 10% 60%;
 
-    --accent: 45 90% 55%;
-    --accent-foreground: 220 20% 8%;
+    /* Golden accent for buttons */
+    --accent: 45 85% 55%;
+    --accent-foreground: 150 20% 10%;
 
-    --destructive: 0 70% 50%;
+    --destructive: 0 70% 55%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 220 15% 22%;
-    --input: 220 15% 18%;
-    --ring: 142 70% 45%;
+    --border: 150 20% 25%;
+    --input: 150 20% 20%;
+    --ring: 142 70% 40%;
 
     --radius: 0.75rem;
 
-    /* Timer specific colors */
-    --timer-glow: 142 70% 45%;
-    --score-home: 210 80% 55%;
-    --score-away: 0 70% 55%;
+    /* Score colors matching reference */
+    --score-home: 0 75% 55%;
+    --score-away: 200 80% 55%;
   }
 }
 
