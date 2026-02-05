@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { GameFormat } from '@/types/game';
-import { Play, Pause, RotateCcw, SkipForward, ArrowLeft, Volume2, VolumeX } from 'lucide-react';
+import { Play, Pause, RotateCcw, SkipForward, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 interface ScoreboardProps {
@@ -21,7 +21,6 @@ const Scoreboard = ({ format, onBack }: ScoreboardProps) => {
   const [currentPeriod, setCurrentPeriod] = useState(1);
   const [timeRemaining, setTimeRemaining] = useState(format.periodDuration * 60);
   const [isRunning, setIsRunning] = useState(false);
-  const [isAudioEnabled, setIsAudioEnabled] = useState(true);
   const [isTimerEnded, setIsTimerEnded] = useState(false);
   const [periodScores, setPeriodScores] = useState<PeriodScore[]>(
     Array.from({ length: format.periodCount }, () => ({ home: 0, away: 0 }))
@@ -30,8 +29,6 @@ const Scoreboard = ({ format, onBack }: ScoreboardProps) => {
   const intervalRef = useRef<number | null>(null);
 
   const playAlarm = useCallback(() => {
-    if (!isAudioEnabled) return;
-    
     try {
       if (!audioContextRef.current) {
         audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
@@ -55,7 +52,7 @@ const Scoreboard = ({ format, onBack }: ScoreboardProps) => {
     } catch (e) {
       console.log('Audio not available');
     }
-  }, [isAudioEnabled]);
+  }, []);
 
   useEffect(() => {
     if (isRunning && timeRemaining > 0) {
@@ -154,9 +151,9 @@ const Scoreboard = ({ format, onBack }: ScoreboardProps) => {
   };
 
   return (
-    <div className="flex min-h-screen flex-col items-center bg-background px-4 py-6">
-      {/* Back and Audio buttons */}
-      <div className="mb-4 flex w-full max-w-lg items-center justify-between">
+    <div className="flex min-h-screen flex-col items-center bg-background px-4 py-8">
+      {/* Back button */}
+      <div className="mb-4 w-full max-w-lg">
         <Button
           variant="ghost"
           size="sm"
@@ -166,35 +163,23 @@ const Scoreboard = ({ format, onBack }: ScoreboardProps) => {
           <ArrowLeft className="h-4 w-4" />
           Back
         </Button>
-        
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => setIsAudioEnabled(!isAudioEnabled)}
-          className="text-muted-foreground hover:text-foreground"
-        >
-          {isAudioEnabled ? <Volume2 className="h-5 w-5" /> : <VolumeX className="h-5 w-5" />}
-        </Button>
       </div>
 
       {/* Header */}
       <div className="mb-4 w-full max-w-lg rounded-xl bg-card py-4 text-center">
         <h1 className="flex items-center justify-center gap-3 text-2xl font-bold text-foreground">
           <span className="text-3xl">⚽</span>
-          Scoreboard
-          <span className="ml-2 text-base font-normal text-muted-foreground">
-            {format.ageGroup} {format.format}
-          </span>
+          Scoreboard APP
         </h1>
       </div>
 
       {/* Timer Section */}
       <div className="mb-4 w-full max-w-lg rounded-xl bg-card p-6">
-        <p className="mb-2 text-center text-sm text-muted-foreground">
+        <p className="mb-2 text-center text-base text-muted-foreground">
           {getPeriodLabel()}
         </p>
         <div
-          className={`mb-4 text-center font-score text-5xl tracking-wider text-foreground ${
+          className={`mb-4 text-center font-score text-6xl tracking-wider text-foreground ${
             isTimerEnded ? 'animate-timer-flash' : ''
           }`}
         >
@@ -234,87 +219,89 @@ const Scoreboard = ({ format, onBack }: ScoreboardProps) => {
         </div>
       </div>
 
-      {/* Score Section */}
-      <div className="mb-4 grid w-full max-w-lg grid-cols-2 gap-3">
-        {/* Home Team */}
-        <div className="rounded-xl border-2 border-score-home/50 bg-card p-4">
-          <input
-            type="text"
-            value={homeName}
-            onChange={(e) => setHomeName(e.target.value.toUpperCase())}
-            className="mb-2 w-full bg-transparent text-center text-sm font-semibold uppercase tracking-wide text-muted-foreground outline-none focus:text-foreground"
-            maxLength={12}
-          />
-          <div className="mb-4 text-center font-score text-6xl text-score-home">
-            {homeScore}
+      {/* Score Section - Combined Card */}
+      <div className="mb-4 w-full max-w-lg rounded-xl border-2 border-score-home bg-card p-4">
+        <div className="grid grid-cols-2 gap-4">
+          {/* Home Team */}
+          <div className="flex flex-col items-center">
+            <input
+              type="text"
+              value={homeName}
+              onChange={(e) => setHomeName(e.target.value.toUpperCase())}
+              className="mb-2 w-full bg-transparent text-center text-sm font-semibold uppercase tracking-wider text-muted-foreground outline-none focus:text-foreground"
+              maxLength={12}
+            />
+            <div className="mb-3 text-center font-score text-7xl text-score-home">
+              {homeScore}
+            </div>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                onClick={() => adjustScore('home', -1)}
+                className="h-10 w-14 border-muted-foreground/30 text-lg font-bold"
+              >
+                −
+              </Button>
+              <Button
+                onClick={() => adjustScore('home', 1)}
+                className="h-10 w-14 bg-score-home text-lg font-bold text-white hover:bg-score-home/80"
+              >
+                +
+              </Button>
+            </div>
           </div>
-          <div className="flex gap-2">
-            <Button
-              variant="outline"
-              onClick={() => adjustScore('home', -1)}
-              className="flex-1 border-border text-lg font-bold hover:bg-secondary"
-            >
-              −
-            </Button>
-            <Button
-              onClick={() => adjustScore('home', 1)}
-              className="flex-1 bg-score-home text-lg font-bold text-white hover:bg-score-home/80"
-            >
-              +
-            </Button>
-          </div>
-        </div>
 
-        {/* Away Team */}
-        <div className="rounded-xl border-2 border-score-away/50 bg-card p-4">
-          <input
-            type="text"
-            value={awayName}
-            onChange={(e) => setAwayName(e.target.value.toUpperCase())}
-            className="mb-2 w-full bg-transparent text-center text-sm font-semibold uppercase tracking-wide text-muted-foreground outline-none focus:text-foreground"
-            maxLength={12}
-          />
-          <div className="mb-4 text-center font-score text-6xl text-score-away">
-            {awayScore}
-          </div>
-          <div className="flex gap-2">
-            <Button
-              variant="outline"
-              onClick={() => adjustScore('away', -1)}
-              className="flex-1 border-border text-lg font-bold hover:bg-secondary"
-            >
-              −
-            </Button>
-            <Button
-              onClick={() => adjustScore('away', 1)}
-              className="flex-1 bg-score-away text-lg font-bold text-white hover:bg-score-away/80"
-            >
-              +
-            </Button>
+          {/* Away Team */}
+          <div className="flex flex-col items-center">
+            <input
+              type="text"
+              value={awayName}
+              onChange={(e) => setAwayName(e.target.value.toUpperCase())}
+              className="mb-2 w-full bg-transparent text-center text-sm font-semibold uppercase tracking-wider text-muted-foreground outline-none focus:text-foreground"
+              maxLength={12}
+            />
+            <div className="mb-3 text-center font-score text-7xl text-score-away">
+              {awayScore}
+            </div>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                onClick={() => adjustScore('away', -1)}
+                className="h-10 w-14 border-muted-foreground/30 text-lg font-bold"
+              >
+                −
+              </Button>
+              <Button
+                onClick={() => adjustScore('away', 1)}
+                className="h-10 w-14 bg-score-away text-lg font-bold text-white hover:bg-score-away/80"
+              >
+                +
+              </Button>
+            </div>
           </div>
         </div>
       </div>
 
       {/* Period Breakdown */}
       <div className="w-full max-w-lg rounded-xl bg-card p-4">
-        <h3 className="mb-4 text-center text-sm font-semibold text-muted-foreground">
+        <h3 className="mb-3 text-center text-base font-semibold text-foreground">
           {format.periodName === 'quarter' ? 'Quarter' : format.periodName === 'half' ? 'Half' : 'Period'} Breakdown
         </h3>
-        <div className="grid gap-2" style={{ gridTemplateColumns: `repeat(${Math.min(format.periodCount, 6)}, 1fr)` }}>
+        <div className="grid gap-2" style={{ gridTemplateColumns: `repeat(${format.periodCount}, 1fr)` }}>
           {periodScores.map((score, index) => (
             <div
               key={index}
               className={`rounded-lg border p-3 text-center transition-colors ${
                 index === currentPeriod - 1
-                  ? 'border-primary bg-primary/10'
-                  : 'border-border bg-secondary/50'
+                  ? 'border-2 border-primary bg-primary/10'
+                  : 'border-border bg-muted/30'
               }`}
             >
-              <div className="mb-1 text-xs font-semibold text-muted-foreground">
+              <div className="mb-1 text-xs font-bold text-muted-foreground">
                 {getShortPeriodLabel(index)}
               </div>
-              <div className="text-sm font-bold text-score-home">{score.home}</div>
-              <div className="text-sm font-bold text-score-away">{score.away}</div>
+              <div className="text-sm font-medium text-score-home">{score.home}</div>
+              <div className="text-sm font-medium text-score-away">{score.away}</div>
             </div>
           ))}
         </div>
