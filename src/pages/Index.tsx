@@ -1,10 +1,31 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { GameFormat, GAME_FORMATS } from '@/types/game';
 import GameFormatCard from '@/components/GameFormatCard';
 import Scoreboard from '@/components/Scoreboard';
+import soccerBallIcon from '@/assets/soccer-ball-icon.png';
 
 const Index = () => {
   const [selectedFormat, setSelectedFormat] = useState<GameFormat | null>(null);
+  const [showSplash, setShowSplash] = useState(true);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setShowSplash(false), 2500);
+    return () => clearTimeout(timer);
+  }, []);
+
+  if (showSplash) {
+    return (
+      <div className="fixed inset-0 flex flex-col items-center justify-center bg-background">
+        <img
+          src={soccerBallIcon}
+          alt="Soccer Ball"
+          className="mb-6 h-32 w-32 animate-bounce brightness-0 invert"
+        />
+        <h1 className="text-4xl font-bold text-foreground">Scoreboard APP</h1>
+        <p className="mt-2 text-muted-foreground">Loading...</p>
+      </div>
+    );
+  }
 
   if (selectedFormat) {
     return <Scoreboard format={selectedFormat} onBack={() => setSelectedFormat(null)} />;

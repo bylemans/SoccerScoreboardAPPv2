@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { GameFormat } from '@/types/game';
 import { Play, Pause, RotateCcw, SkipForward, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import soccerBallIcon from '@/assets/soccer-ball-icon.png';
 
 interface ScoreboardProps {
   format: GameFormat;
@@ -168,7 +169,7 @@ const Scoreboard = ({ format, onBack }: ScoreboardProps) => {
       {/* Header */}
       <div className="mb-4 w-full max-w-lg rounded-xl bg-card py-4 text-center">
         <h1 className="flex items-center justify-center gap-3 text-2xl font-bold text-foreground">
-          <span className="text-3xl">⚽</span>
+          <img src={soccerBallIcon} alt="Soccer Ball" className="h-8 w-8 brightness-0 invert" />
           Scoreboard APP
         </h1>
       </div>
