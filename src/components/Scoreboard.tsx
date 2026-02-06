@@ -152,26 +152,27 @@ const Scoreboard = ({ format, onBack }: ScoreboardProps) => {
   };
 
   return (
-    <div className="flex min-h-screen flex-col items-center bg-background px-4 py-8">
-      {/* Back button */}
+    <div className="flex min-h-screen flex-col items-center bg-background px-4 py-6">
+      {/* Header with back button and format display */}
       <div className="mb-4 w-full max-w-lg">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={onBack}
-          className="gap-2 text-muted-foreground hover:text-foreground"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          Back
-        </Button>
-      </div>
-
-      {/* Header */}
-      <div className="mb-4 w-full max-w-lg rounded-xl bg-card py-4 text-center">
-        <h1 className="flex items-center justify-center gap-3 text-2xl font-bold text-foreground">
-          <img src={soccerBallIcon} alt="Soccer Ball" className="h-8 w-8 brightness-0 invert" />
-          Scoreboard APP
-        </h1>
+        <div className="flex items-center justify-between rounded-xl bg-card px-4 py-3">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onBack}
+            className="gap-2 text-muted-foreground hover:text-foreground"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Back
+          </Button>
+          <h1 className="flex items-center gap-2 text-xl font-bold text-foreground">
+            <img src={soccerBallIcon} alt="Soccer Ball" className="h-6 w-6 brightness-0 invert" />
+            Scoreboard
+          </h1>
+          <span className="rounded-full bg-primary/20 px-3 py-1 text-sm font-bold text-primary">
+            {format.ageGroup} {format.format}
+          </span>
+        </div>
       </div>
 
       {/* Timer Section */}
@@ -220,65 +221,63 @@ const Scoreboard = ({ format, onBack }: ScoreboardProps) => {
         </div>
       </div>
 
-      {/* Score Section - Combined Card */}
-      <div className="mb-4 w-full max-w-lg rounded-xl border-2 border-score-home bg-card p-4">
-        <div className="grid grid-cols-2 gap-4">
-          {/* Home Team */}
-          <div className="flex flex-col items-center">
-            <input
-              type="text"
-              value={homeName}
-              onChange={(e) => setHomeName(e.target.value.toUpperCase())}
-              className="mb-2 w-full bg-transparent text-center text-sm font-semibold uppercase tracking-wider text-muted-foreground outline-none focus:text-foreground"
-              maxLength={12}
-            />
-            <div className="mb-3 text-center font-score text-7xl text-score-home">
-              {homeScore}
-            </div>
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                onClick={() => adjustScore('home', -1)}
-                className="h-10 w-14 border-muted-foreground/30 text-lg font-bold"
-              >
-                −
-              </Button>
-              <Button
-                onClick={() => adjustScore('home', 1)}
-                className="h-10 w-14 bg-score-home text-lg font-bold text-white hover:bg-score-home/80"
-              >
-                +
-              </Button>
-            </div>
+      {/* Score Section - Two Separate Cards */}
+      <div className="mb-4 grid w-full max-w-lg grid-cols-2 gap-3">
+        {/* Home Team */}
+        <div className="flex flex-col items-center rounded-xl border-2 border-score-home bg-card p-4">
+          <input
+            type="text"
+            value={homeName}
+            onChange={(e) => setHomeName(e.target.value.toUpperCase())}
+            className="mb-2 w-full bg-transparent text-center text-sm font-semibold uppercase tracking-wider text-muted-foreground outline-none focus:text-foreground"
+            maxLength={12}
+          />
+          <div className="mb-3 text-center font-score text-6xl text-score-home">
+            {homeScore}
           </div>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              onClick={() => adjustScore('home', -1)}
+              className="h-10 w-12 border-muted-foreground/30 text-lg font-bold"
+            >
+              −
+            </Button>
+            <Button
+              onClick={() => adjustScore('home', 1)}
+              className="h-10 w-12 bg-score-home text-lg font-bold text-white hover:bg-score-home/80"
+            >
+              +
+            </Button>
+          </div>
+        </div>
 
-          {/* Away Team */}
-          <div className="flex flex-col items-center">
-            <input
-              type="text"
-              value={awayName}
-              onChange={(e) => setAwayName(e.target.value.toUpperCase())}
-              className="mb-2 w-full bg-transparent text-center text-sm font-semibold uppercase tracking-wider text-muted-foreground outline-none focus:text-foreground"
-              maxLength={12}
-            />
-            <div className="mb-3 text-center font-score text-7xl text-score-away">
-              {awayScore}
-            </div>
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                onClick={() => adjustScore('away', -1)}
-                className="h-10 w-14 border-muted-foreground/30 text-lg font-bold"
-              >
-                −
-              </Button>
-              <Button
-                onClick={() => adjustScore('away', 1)}
-                className="h-10 w-14 bg-score-away text-lg font-bold text-white hover:bg-score-away/80"
-              >
-                +
-              </Button>
-            </div>
+        {/* Away Team */}
+        <div className="flex flex-col items-center rounded-xl border-2 border-score-away bg-card p-4">
+          <input
+            type="text"
+            value={awayName}
+            onChange={(e) => setAwayName(e.target.value.toUpperCase())}
+            className="mb-2 w-full bg-transparent text-center text-sm font-semibold uppercase tracking-wider text-muted-foreground outline-none focus:text-foreground"
+            maxLength={12}
+          />
+          <div className="mb-3 text-center font-score text-6xl text-score-away">
+            {awayScore}
+          </div>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              onClick={() => adjustScore('away', -1)}
+              className="h-10 w-12 border-muted-foreground/30 text-lg font-bold"
+            >
+              −
+            </Button>
+            <Button
+              onClick={() => adjustScore('away', 1)}
+              className="h-10 w-12 bg-score-away text-lg font-bold text-white hover:bg-score-away/80"
+            >
+              +
+            </Button>
           </div>
         </div>
       </div>
