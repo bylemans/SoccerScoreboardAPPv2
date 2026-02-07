@@ -20,7 +20,7 @@ export default defineConfig(({ mode }) => ({
     mode === "development" && componentTagger(),
     VitePWA({
       registerType: "autoUpdate",
-      includeAssets: ["favicon.ico", "soccer-ball-icon.png"],
+      includeAssets: ["favicon.ico", "soccer-ball-icon.png", "app-icon.png"],
       manifest: {
         name: "Soccer Scoreboard APP",
         short_name: "Scoreboard",
@@ -33,13 +33,13 @@ export default defineConfig(({ mode }) => ({
         scope: "/SoccerScoreboardAPPv2/",
         icons: [
           {
-            src: "soccer-ball-icon.png",
+            src: "app-icon.png",
             sizes: "192x192",
             type: "image/png",
             purpose: "any maskable",
           },
           {
-            src: "soccer-ball-icon.png",
+            src: "app-icon.png",
             sizes: "512x512",
             type: "image/png",
             purpose: "any maskable",
