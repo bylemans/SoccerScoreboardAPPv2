@@ -27,7 +27,8 @@ const Scoreboard = ({ format, onBack }: ScoreboardProps) => {
     Array.from({ length: format.periodCount }, () => ({ home: 0, away: 0 }))
   );
   const audioContextRef = useRef<AudioContext | null>(null);
-  const intervalRef = useRef<number | null>(null);
+  const endTimeRef = useRef<number | null>(null);
+  const animationFrameRef = useRef<number | null>(null);
 
   const playAlarm = useCallback(() => {
     try {
@@ -36,44 +37,76 @@ const Scoreboard = ({ format, onBack }: ScoreboardProps) => {
       }
       
       const ctx = audioContextRef.current;
-      const oscillator = ctx.createOscillator();
-      const gainNode = ctx.createGain();
       
-      oscillator.connect(gainNode);
-      gainNode.connect(ctx.destination);
-      
-      oscillator.type = 'sine';
-      oscillator.frequency.setValueAtTime(880, ctx.currentTime);
-      
-      gainNode.gain.setValueAtTime(0.5, ctx.currentTime);
-      gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 1);
-      
-      oscillator.start(ctx.currentTime);
-      oscillator.stop(ctx.currentTime + 1);
+      // Play three beeps for better audibility
+      for (let i = 0; i < 3; i++) {
+        const oscillator = ctx.createOscillator();
+        const gainNode = ctx.createGain();
+        
+        oscillator.connect(gainNode);
+        gainNode.connect(ctx.destination);
+        
+        oscillator.type = 'sine';
+        oscillator.frequency.setValueAtTime(880, ctx.currentTime + i * 0.4);
+        
+        gainNode.gain.setValueAtTime(0.5, ctx.currentTime + i * 0.4);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + i * 0.4 + 0.3);
+        
+        oscillator.start(ctx.currentTime + i * 0.4);
+        oscillator.stop(ctx.currentTime + i * 0.4 + 0.3);
+      }
     } catch (e) {
       console.log('Audio not available');
     }
   }, []);
 
+  // Time-based timer that works even when app is in background
   useEffect(() => {
-    if (isRunning && timeRemaining > 0) {
-      intervalRef.current = window.setInterval(() => {
-        setTimeRemaining((prev) => {
-          if (prev <= 1) {
-            setIsRunning(false);
-            setIsTimerEnded(true);
-            playAlarm();
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
+    if (!isRunning) {
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
+      return;
     }
 
-    return () => {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
+    // Set the end time when starting
+    if (!endTimeRef.current) {
+      endTimeRef.current = Date.now() + timeRemaining * 1000;
+    }
+
+    const updateTimer = () => {
+      const now = Date.now();
+      const remaining = Math.max(0, Math.ceil((endTimeRef.current! - now) / 1000));
+      
+      setTimeRemaining(remaining);
+      
+      if (remaining <= 0) {
+        setIsRunning(false);
+        setIsTimerEnded(true);
+        endTimeRef.current = null;
+        playAlarm();
+        return;
       }
+      
+      animationFrameRef.current = requestAnimationFrame(updateTimer);
+    };
+
+    animationFrameRef.current = requestAnimationFrame(updateTimer);
+
+    // Also use visibility change to update immediately when returning to app
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible' && endTimeRef.current) {
+        updateTimer();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
   }, [isRunning, playAlarm]);
 
@@ -112,6 +145,7 @@ const Scoreboard = ({ format, onBack }: ScoreboardProps) => {
       setTimeRemaining(format.periodDuration * 60);
       setIsRunning(false);
       setIsTimerEnded(false);
+      endTimeRef.current = null;
     }
   };
 
@@ -122,6 +156,7 @@ const Scoreboard = ({ format, onBack }: ScoreboardProps) => {
     setAwayScore(0);
     setIsRunning(false);
     setIsTimerEnded(false);
+    endTimeRef.current = null;
     setPeriodScores(Array.from({ length: format.periodCount }, () => ({ home: 0, away: 0 })));
   };
 
@@ -191,7 +226,16 @@ const Scoreboard = ({ format, onBack }: ScoreboardProps) => {
         {/* Timer Controls */}
         <div className="flex justify-center gap-3">
           <Button
-            onClick={() => setIsRunning(!isRunning)}
+            onClick={() => {
+              if (isRunning) {
+                // Pausing: save remaining time and clear end time
+                endTimeRef.current = null;
+              } else {
+                // Starting: set new end time based on remaining time
+                endTimeRef.current = Date.now() + timeRemaining * 1000;
+              }
+              setIsRunning(!isRunning);
+            }}
             disabled={timeRemaining === 0}
             className="gap-2 bg-primary text-primary-foreground hover:bg-primary/80"
           >
