@@ -32,13 +32,48 @@ const Scoreboard = ({ format, onBack }: ScoreboardProps) => {
   const endTimeRef = useRef<number | null>(null);
   const animationFrameRef = useRef<number | null>(null);
 
+  // Request notification permission on mount
+  useEffect(() => {
+    if ('Notification' in window && Notification.permission === 'default') {
+      Notification.requestPermission();
+    }
+  }, []);
+
   const playAlarm = useCallback(() => {
+    // Vibrate pattern for alarm (works in background on mobile)
+    vibrate([200, 100, 200, 100, 200, 100, 200]);
+
+    // Show notification (works when screen is off)
+    if ('Notification' in window && Notification.permission === 'granted') {
+      const periodLabel = format.periodName === 'quarter' 
+        ? `Quarter ${currentPeriod}` 
+        : format.periodName === 'half' 
+          ? `Half ${currentPeriod}` 
+          : `Period ${currentPeriod}`;
+      
+      const notification = new Notification('⏱️ Period Ended!', {
+        body: `${periodLabel} has ended`,
+        icon: '/app-icon.png',
+        tag: 'timer-alarm',
+        requireInteraction: true,
+      });
+      
+      // Auto-close after 10 seconds
+      setTimeout(() => notification.close(), 10000);
+    }
+
+    // Also try to play audio (works when app is active)
     try {
       if (!audioContextRef.current) {
         audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
       }
       
       const ctx = audioContextRef.current;
+      
+      // Resume context if suspended (common after background)
+      if (ctx.state === 'suspended') {
+        ctx.resume();
+      }
       
       // Play three beeps for better audibility
       for (let i = 0; i < 3; i++) {
@@ -60,7 +95,7 @@ const Scoreboard = ({ format, onBack }: ScoreboardProps) => {
     } catch (e) {
       console.log('Audio not available');
     }
-  }, []);
+  }, [vibrate, format.periodName, currentPeriod]);
 
   // Time-based timer that works even when app is in background
   useEffect(() => {
