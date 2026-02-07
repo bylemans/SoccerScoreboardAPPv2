@@ -36,8 +36,9 @@ const Index = () => {
       <div className="mx-auto max-w-2xl">
         {/* Header */}
         <div className="mb-8 text-center">
-          <h1 className="mb-2 text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
-            ⚽ Soccer Scoreboard
+          <h1 className="mb-2 flex items-center justify-center gap-2 text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
+            <img src={soccerBallIcon} alt="Soccer Ball" className="h-8 w-8 brightness-0 invert sm:h-10 sm:w-10" />
+            Soccer Scoreboard
           </h1>
           <p className="text-muted-foreground">
             Select your game format to start
