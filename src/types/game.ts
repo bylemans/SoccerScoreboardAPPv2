@@ -9,14 +9,6 @@ export interface GameFormat {
 
 export const GAME_FORMATS: GameFormat[] = [
   {
-    id: 'u6',
-    ageGroup: 'U6',
-    format: '2v2',
-    periodCount: 6,
-    periodDuration: 6,
-    periodName: 'period',
-  },
-  {
     id: 'u7',
     ageGroup: 'U7',
     format: '3v3',

@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { GameFormat } from '@/types/game';
 import { Play, Pause, RotateCcw, SkipForward, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useVibrate } from '@/hooks/useVibrate';
 import soccerBallIcon from '@/assets/soccer-ball-icon.png';
 
 interface ScoreboardProps {
@@ -15,6 +16,7 @@ interface PeriodScore {
 }
 
 const Scoreboard = ({ format, onBack }: ScoreboardProps) => {
+  const { vibrate } = useVibrate();
   const [homeScore, setHomeScore] = useState(0);
   const [awayScore, setAwayScore] = useState(0);
   const [homeName, setHomeName] = useState('HOME');
@@ -140,6 +142,7 @@ const Scoreboard = ({ format, onBack }: ScoreboardProps) => {
   };
 
   const handleNextPeriod = () => {
+    vibrate(15);
     if (currentPeriod < format.periodCount) {
       setCurrentPeriod((prev) => prev + 1);
       setTimeRemaining(format.periodDuration * 60);
@@ -150,6 +153,7 @@ const Scoreboard = ({ format, onBack }: ScoreboardProps) => {
   };
 
   const handleReset = () => {
+    vibrate([15, 50, 15]);
     setCurrentPeriod(1);
     setTimeRemaining(format.periodDuration * 60);
     setHomeScore(0);
@@ -161,6 +165,7 @@ const Scoreboard = ({ format, onBack }: ScoreboardProps) => {
   };
 
   const adjustScore = (team: 'home' | 'away', delta: number) => {
+    vibrate(10);
     const periodIndex = currentPeriod - 1;
     
     if (team === 'home') {
@@ -227,6 +232,7 @@ const Scoreboard = ({ format, onBack }: ScoreboardProps) => {
         <div className="flex justify-center gap-3">
           <Button
             onClick={() => {
+              vibrate(15);
               if (isRunning) {
                 // Pausing: save remaining time and clear end time
                 endTimeRef.current = null;
