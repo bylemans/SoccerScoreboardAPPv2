@@ -40,10 +40,11 @@ const Scoreboard = ({ format, onBack }: ScoreboardProps) => {
   }, []);
 
   const playAlarm = useCallback(() => {
-    // Vibrate pattern for alarm (works in background on mobile)
-    vibrate([200, 100, 200, 100, 200, 100, 200]);
+    // Strong vibration pattern - long pulses for better notice
+    const strongVibration = [500, 200, 500, 200, 500, 200, 500, 200, 500];
+    vibrate(strongVibration);
 
-    // Show notification (works when screen is off)
+    // Show notification with vibrate (Android can vibrate in background via notification)
     if ('Notification' in window && Notification.permission === 'granted') {
       const periodLabel = format.periodName === 'quarter' 
         ? `Quarter ${currentPeriod}` 
@@ -51,15 +52,27 @@ const Scoreboard = ({ format, onBack }: ScoreboardProps) => {
           ? `Half ${currentPeriod}` 
           : `Period ${currentPeriod}`;
       
-      const notification = new Notification('⏱️ Period Ended!', {
-        body: `${periodLabel} has ended`,
-        icon: '/app-icon.png',
-        tag: 'timer-alarm',
-        requireInteraction: true,
-      });
-      
-      // Auto-close after 10 seconds
-      setTimeout(() => notification.close(), 10000);
+      // Use ServiceWorker registration for better background support
+      if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+        navigator.serviceWorker.ready.then((registration) => {
+          registration.showNotification('⏱️ Period Ended!', {
+            body: `${periodLabel} has ended`,
+            icon: '/app-icon.png',
+            tag: 'timer-alarm',
+            requireInteraction: true,
+            vibrate: strongVibration,
+          } as NotificationOptions);
+        });
+      } else {
+        // Fallback to regular notification
+        const notification = new Notification('⏱️ Period Ended!', {
+          body: `${periodLabel} has ended`,
+          icon: '/app-icon.png',
+          tag: 'timer-alarm',
+          requireInteraction: true,
+        });
+        setTimeout(() => notification.close(), 10000);
+      }
     }
 
     // Also try to play audio (works when app is active)
