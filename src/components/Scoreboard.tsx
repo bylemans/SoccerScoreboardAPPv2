@@ -304,7 +304,7 @@ const Scoreboard = ({ format, onBack }: ScoreboardProps) => {
             <img src={soccerBallIcon} alt="Soccer Ball" className="h-6 w-6 brightness-0 invert" />
             Scoreboard
           </h1>
-          <span className="rounded-full bg-primary/20 px-3 py-1 text-primary">
+          <span className="flex flex-col items-center rounded-full bg-primary/20 px-3 py-1 text-primary">
             <span className="block text-sm font-bold leading-none">{format.ageGroup}</span>
             <span className="block text-xs font-semibold leading-none">{format.format}</span>
           </span>
