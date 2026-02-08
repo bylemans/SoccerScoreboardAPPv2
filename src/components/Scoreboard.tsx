@@ -31,6 +31,7 @@ const Scoreboard = ({ format, onBack }: ScoreboardProps) => {
   const audioContextRef = useRef<AudioContext | null>(null);
   const endTimeRef = useRef<number | null>(null);
   const animationFrameRef = useRef<number | null>(null);
+  const alarmTimeoutRef = useRef<number | null>(null);
 
   // Request notification permission on mount
   useEffect(() => {
@@ -53,16 +54,27 @@ const Scoreboard = ({ format, onBack }: ScoreboardProps) => {
           : `Period ${currentPeriod}`;
       
       // Use ServiceWorker registration for better background support
-      if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
-        navigator.serviceWorker.ready.then((registration) => {
-          registration.showNotification('⏱️ Period Ended!', {
-            body: `${periodLabel} has ended`,
-            icon: '/app-icon.png',
-            tag: 'timer-alarm',
-            requireInteraction: true,
-            vibrate: strongVibration,
-          } as NotificationOptions);
-        });
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.ready
+          .then((registration) => {
+            registration.showNotification('⏱️ Period Ended!', {
+              body: `${periodLabel} has ended`,
+              icon: '/app-icon.png',
+              tag: 'timer-alarm',
+              requireInteraction: true,
+              vibrate: strongVibration,
+            } as NotificationOptions);
+          })
+          .catch(() => {
+            // Fallback to regular notification
+            const notification = new Notification('⏱️ Period Ended!', {
+              body: `${periodLabel} has ended`,
+              icon: '/app-icon.png',
+              tag: 'timer-alarm',
+              requireInteraction: true,
+            });
+            setTimeout(() => notification.close(), 10000);
+          });
       } else {
         // Fallback to regular notification
         const notification = new Notification('⏱️ Period Ended!', {
@@ -110,9 +122,17 @@ const Scoreboard = ({ format, onBack }: ScoreboardProps) => {
     }
   }, [vibrate, format.periodName, currentPeriod]);
 
-  // Time-based timer that works even when app is in background
+  // Time-based timer that works even when app is in background (best-effort; browser-dependent)
   useEffect(() => {
+    const clearAlarmTimeout = () => {
+      if (alarmTimeoutRef.current) {
+        window.clearTimeout(alarmTimeoutRef.current);
+        alarmTimeoutRef.current = null;
+      }
+    };
+
     if (!isRunning) {
+      clearAlarmTimeout();
       if (animationFrameRef.current) {
         cancelAnimationFrame(animationFrameRef.current);
       }
@@ -124,20 +144,38 @@ const Scoreboard = ({ format, onBack }: ScoreboardProps) => {
       endTimeRef.current = Date.now() + timeRemaining * 1000;
     }
 
-    const updateTimer = () => {
-      const now = Date.now();
-      const remaining = Math.max(0, Math.ceil((endTimeRef.current! - now) / 1000));
-      
-      setTimeRemaining(remaining);
-      
-      if (remaining <= 0) {
+    const scheduleAlarmTimeout = () => {
+      clearAlarmTimeout();
+      const msRemaining = Math.max(0, endTimeRef.current! - Date.now());
+
+      // +50ms to avoid early firing due to timer rounding
+      alarmTimeoutRef.current = window.setTimeout(() => {
+        setTimeRemaining(0);
         setIsRunning(false);
         setIsTimerEnded(true);
         endTimeRef.current = null;
         playAlarm();
+      }, msRemaining + 50);
+    };
+
+    // This improves reliability when the tab is backgrounded (where browsers still run timeouts)
+    scheduleAlarmTimeout();
+
+    const updateTimer = () => {
+      const now = Date.now();
+      const remaining = Math.max(0, Math.ceil((endTimeRef.current! - now) / 1000));
+
+      setTimeRemaining(remaining);
+
+      if (remaining <= 0) {
+        setIsRunning(false);
+        setIsTimerEnded(true);
+        endTimeRef.current = null;
+        clearAlarmTimeout();
+        playAlarm();
         return;
       }
-      
+
       animationFrameRef.current = requestAnimationFrame(updateTimer);
     };
 
@@ -153,6 +191,7 @@ const Scoreboard = ({ format, onBack }: ScoreboardProps) => {
     document.addEventListener('visibilitychange', handleVisibilityChange);
 
     return () => {
+      clearAlarmTimeout();
       if (animationFrameRef.current) {
         cancelAnimationFrame(animationFrameRef.current);
       }
@@ -191,6 +230,10 @@ const Scoreboard = ({ format, onBack }: ScoreboardProps) => {
 
   const handleNextPeriod = () => {
     vibrate(15);
+    if (alarmTimeoutRef.current) {
+      window.clearTimeout(alarmTimeoutRef.current);
+      alarmTimeoutRef.current = null;
+    }
     if (currentPeriod < format.periodCount) {
       setCurrentPeriod((prev) => prev + 1);
       setTimeRemaining(format.periodDuration * 60);
@@ -202,6 +245,10 @@ const Scoreboard = ({ format, onBack }: ScoreboardProps) => {
 
   const handleReset = () => {
     vibrate([15, 50, 15]);
+    if (alarmTimeoutRef.current) {
+      window.clearTimeout(alarmTimeoutRef.current);
+      alarmTimeoutRef.current = null;
+    }
     setCurrentPeriod(1);
     setTimeRemaining(format.periodDuration * 60);
     setHomeScore(0);
@@ -257,8 +304,9 @@ const Scoreboard = ({ format, onBack }: ScoreboardProps) => {
             <img src={soccerBallIcon} alt="Soccer Ball" className="h-6 w-6 brightness-0 invert" />
             Scoreboard
           </h1>
-          <span className="rounded-full bg-primary/20 px-3 py-1 text-sm font-bold text-primary">
-            {format.ageGroup} {format.format}
+          <span className="rounded-full bg-primary/20 px-3 py-1 text-primary">
+            <span className="block text-sm font-bold leading-none">{format.ageGroup}</span>
+            <span className="block text-xs font-semibold leading-none">{format.format}</span>
           </span>
         </div>
       </div>
@@ -283,6 +331,10 @@ const Scoreboard = ({ format, onBack }: ScoreboardProps) => {
               vibrate(15);
               if (isRunning) {
                 // Pausing: save remaining time and clear end time
+                if (alarmTimeoutRef.current) {
+                  window.clearTimeout(alarmTimeoutRef.current);
+                  alarmTimeoutRef.current = null;
+                }
                 endTimeRef.current = null;
               } else {
                 // Starting: set new end time based on remaining time
