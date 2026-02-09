@@ -1,8 +1,9 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { GameFormat } from '@/types/game';
-import { Play, Pause, RotateCcw, SkipForward, ArrowLeft } from 'lucide-react';
+import { Play, Pause, RotateCcw, SkipForward, ArrowLeft, Bell, BellOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useVibrate } from '@/hooks/useVibrate';
+import { usePushNotifications } from '@/hooks/usePushNotifications';
 import soccerBallIcon from '@/assets/soccer-ball-icon.png';
 
 interface ScoreboardProps {
@@ -17,6 +18,13 @@ interface PeriodScore {
 
 const Scoreboard = ({ format, onBack }: ScoreboardProps) => {
   const { vibrate } = useVibrate();
+  const { 
+    fcmToken, 
+    isSupported: isPushSupported, 
+    initializePush, 
+    scheduleAlarm, 
+    cancelScheduledAlarm 
+  } = usePushNotifications();
   const [homeScore, setHomeScore] = useState(0);
   const [awayScore, setAwayScore] = useState(0);
   const [homeName, setHomeName] = useState('HOME');
@@ -25,6 +33,7 @@ const Scoreboard = ({ format, onBack }: ScoreboardProps) => {
   const [timeRemaining, setTimeRemaining] = useState(format.periodDuration * 60);
   const [isRunning, setIsRunning] = useState(false);
   const [isTimerEnded, setIsTimerEnded] = useState(false);
+  const [pushEnabled, setPushEnabled] = useState(false);
   const [periodScores, setPeriodScores] = useState<PeriodScore[]>(
     Array.from({ length: format.periodCount }, () => ({ home: 0, away: 0 }))
   );
@@ -33,12 +42,19 @@ const Scoreboard = ({ format, onBack }: ScoreboardProps) => {
   const animationFrameRef = useRef<number | null>(null);
   const alarmTimeoutRef = useRef<number | null>(null);
 
-  // Request notification permission on mount
+  // Initialize push notifications when enabled
   useEffect(() => {
-    if ('Notification' in window && Notification.permission === 'default') {
-      Notification.requestPermission();
+    if (fcmToken) {
+      setPushEnabled(true);
     }
-  }, []);
+  }, [fcmToken]);
+
+  const handleEnablePush = async () => {
+    const token = await initializePush();
+    if (token) {
+      setPushEnabled(true);
+    }
+  };
 
   const playAlarm = useCallback(() => {
     // Strong vibration pattern - long pulses for better notice
@@ -234,6 +250,7 @@ const Scoreboard = ({ format, onBack }: ScoreboardProps) => {
       window.clearTimeout(alarmTimeoutRef.current);
       alarmTimeoutRef.current = null;
     }
+    cancelScheduledAlarm();
     if (currentPeriod < format.periodCount) {
       setCurrentPeriod((prev) => prev + 1);
       setTimeRemaining(format.periodDuration * 60);
@@ -249,6 +266,7 @@ const Scoreboard = ({ format, onBack }: ScoreboardProps) => {
       window.clearTimeout(alarmTimeoutRef.current);
       alarmTimeoutRef.current = null;
     }
+    cancelScheduledAlarm();
     setCurrentPeriod(1);
     setTimeRemaining(format.periodDuration * 60);
     setHomeScore(0);
@@ -335,10 +353,25 @@ const Scoreboard = ({ format, onBack }: ScoreboardProps) => {
                   window.clearTimeout(alarmTimeoutRef.current);
                   alarmTimeoutRef.current = null;
                 }
+                cancelScheduledAlarm();
                 endTimeRef.current = null;
               } else {
                 // Starting: set new end time based on remaining time
                 endTimeRef.current = Date.now() + timeRemaining * 1000;
+                
+                // Schedule push notification for when timer ends (if push enabled)
+                if (pushEnabled && fcmToken) {
+                  const periodLabel = format.periodName === 'quarter' 
+                    ? `Quarter ${currentPeriod}` 
+                    : format.periodName === 'half' 
+                      ? `Half ${currentPeriod}` 
+                      : `Period ${currentPeriod}`;
+                  scheduleAlarm(
+                    timeRemaining * 1000,
+                    '⏱️ Period Ended!',
+                    `${periodLabel} has ended`
+                  );
+                }
               }
               setIsRunning(!isRunning);
             }}
@@ -369,6 +402,31 @@ const Scoreboard = ({ format, onBack }: ScoreboardProps) => {
             <RotateCcw className="h-4 w-4" /> Reset
           </Button>
         </div>
+
+        {/* Push notification toggle */}
+        {isPushSupported && (
+          <div className="mt-3 flex justify-center">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleEnablePush}
+              disabled={pushEnabled}
+              className="gap-2 text-sm"
+            >
+              {pushEnabled ? (
+                <>
+                  <Bell className="h-4 w-4 text-primary" />
+                  Background Alarm Active
+                </>
+              ) : (
+                <>
+                  <BellOff className="h-4 w-4" />
+                  Enable Background Alarm
+                </>
+              )}
+            </Button>
+          </div>
+        )}
       </div>
 
       {/* Score Section - Two Separate Cards */}
