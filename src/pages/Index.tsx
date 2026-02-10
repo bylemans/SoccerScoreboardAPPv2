@@ -13,6 +13,10 @@ const Index = () => {
     return () => clearTimeout(timer);
   }, []);
 
+  if (selectedFormat) {
+    return <Scoreboard format={selectedFormat} onBack={() => setSelectedFormat(null)} />;
+  }
+
   if (showSplash) {
     return (
       <div className="fixed inset-0 flex flex-col items-center justify-center bg-background">
@@ -25,10 +29,6 @@ const Index = () => {
         <p className="mt-2 text-muted-foreground">Loading...</p>
       </div>
     );
-  }
-
-  if (selectedFormat) {
-    return <Scoreboard format={selectedFormat} onBack={() => setSelectedFormat(null)} />;
   }
 
   return (

@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { GameFormat } from '@/types/game';
-import { Play, Pause, RotateCcw, SkipForward, ArrowLeft, Bell, BellOff } from 'lucide-react';
+import { Play, Pause, RotateCcw, SkipForward, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useVibrate } from '@/hooks/useVibrate';
 import { usePushNotifications } from '@/hooks/usePushNotifications';
@@ -33,7 +33,7 @@ const Scoreboard = ({ format, onBack }: ScoreboardProps) => {
   const [timeRemaining, setTimeRemaining] = useState(format.periodDuration * 60);
   const [isRunning, setIsRunning] = useState(false);
   const [isTimerEnded, setIsTimerEnded] = useState(false);
-  const [pushEnabled, setPushEnabled] = useState(false);
+  
   const [periodScores, setPeriodScores] = useState<PeriodScore[]>(
     Array.from({ length: format.periodCount }, () => ({ home: 0, away: 0 }))
   );
@@ -42,19 +42,12 @@ const Scoreboard = ({ format, onBack }: ScoreboardProps) => {
   const animationFrameRef = useRef<number | null>(null);
   const alarmTimeoutRef = useRef<number | null>(null);
 
-  // Initialize push notifications when enabled
+  // Auto-initialize push notifications on mount
   useEffect(() => {
-    if (fcmToken) {
-      setPushEnabled(true);
+    if (isPushSupported && !fcmToken) {
+      initializePush();
     }
-  }, [fcmToken]);
-
-  const handleEnablePush = async () => {
-    const token = await initializePush();
-    if (token) {
-      setPushEnabled(true);
-    }
-  };
+  }, [isPushSupported, fcmToken, initializePush]);
 
   const playAlarm = useCallback(() => {
     // Strong vibration pattern - long pulses for better notice
@@ -359,8 +352,8 @@ const Scoreboard = ({ format, onBack }: ScoreboardProps) => {
                 // Starting: set new end time based on remaining time
                 endTimeRef.current = Date.now() + timeRemaining * 1000;
                 
-                // Schedule push notification for when timer ends (if push enabled)
-                if (pushEnabled && fcmToken) {
+                // Schedule push notification for when timer ends
+                if (fcmToken) {
                   const periodLabel = format.periodName === 'quarter' 
                     ? `Quarter ${currentPeriod}` 
                     : format.periodName === 'half' 
@@ -403,30 +396,6 @@ const Scoreboard = ({ format, onBack }: ScoreboardProps) => {
           </Button>
         </div>
 
-        {/* Push notification toggle */}
-        {isPushSupported && (
-          <div className="mt-3 flex justify-center">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleEnablePush}
-              disabled={pushEnabled}
-              className="gap-2 text-sm"
-            >
-              {pushEnabled ? (
-                <>
-                  <Bell className="h-4 w-4 text-primary" />
-                  Background Alarm Active
-                </>
-              ) : (
-                <>
-                  <BellOff className="h-4 w-4" />
-                  Enable Background Alarm
-                </>
-              )}
-            </Button>
-          </div>
-        )}
       </div>
 
       {/* Score Section - Two Separate Cards */}
