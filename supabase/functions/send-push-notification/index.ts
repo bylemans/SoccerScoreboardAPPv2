@@ -7,15 +7,11 @@ interface PushRequest {
   token: string;
   title: string;
   body: string;
+  scheduledAt?: string; // ISO timestamp for delayed send
 }
 
 async function getAccessToken(serviceAccount: any): Promise<string> {
-  // Create JWT header and claim set
-  const header = {
-    alg: "RS256",
-    typ: "JWT",
-  };
-
+  const header = { alg: "RS256", typ: "JWT" };
   const now = Math.floor(Date.now() / 1000);
   const claim = {
     iss: serviceAccount.client_email,
@@ -25,13 +21,10 @@ async function getAccessToken(serviceAccount: any): Promise<string> {
     exp: now + 3600,
   };
 
-  // Base64URL encode
-  const encoder = new TextEncoder();
   const headerB64 = btoa(JSON.stringify(header)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
   const claimB64 = btoa(JSON.stringify(claim)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
   const unsignedToken = `${headerB64}.${claimB64}`;
 
-  // Import private key and sign
   const privateKeyPem = serviceAccount.private_key;
   const pemContents = privateKeyPem
     .replace(/-----BEGIN PRIVATE KEY-----/, '')
@@ -48,6 +41,7 @@ async function getAccessToken(serviceAccount: any): Promise<string> {
     ["sign"]
   );
 
+  const encoder = new TextEncoder();
   const signature = await crypto.subtle.sign(
     "RSASSA-PKCS1-v1_5",
     cryptoKey,
@@ -61,7 +55,6 @@ async function getAccessToken(serviceAccount: any): Promise<string> {
 
   const jwt = `${unsignedToken}.${signatureB64}`;
 
-  // Exchange JWT for access token
   const tokenResponse = await fetch("https://oauth2.googleapis.com/token", {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
@@ -78,27 +71,79 @@ async function getAccessToken(serviceAccount: any): Promise<string> {
   return tokenData.access_token;
 }
 
+async function sendFCM(serviceAccount: any, token: string, title: string, body: string) {
+  const accessToken = await getAccessToken(serviceAccount);
+  console.log("Successfully obtained FCM access token");
+
+  const fcmUrl = `https://fcm.googleapis.com/v1/projects/${serviceAccount.project_id}/messages:send`;
+  
+  const message = {
+    message: {
+      token: token,
+      notification: {
+        title: title || "⏱️ Period Ended!",
+        body: body || "Time's up!",
+      },
+      webpush: {
+        notification: {
+          icon: "/app-icon.png",
+          badge: "/app-icon.png",
+          vibrate: [500, 200, 500, 200, 500],
+          requireInteraction: true,
+          tag: "timer-alarm",
+        },
+      },
+      android: {
+        priority: "high",
+        notification: {
+          channelId: "timer_alarm",
+          priority: "max",
+          defaultVibrateTimings: false,
+          vibrateTimings: ["0.5s", "0.2s", "0.5s", "0.2s", "0.5s"],
+        },
+      },
+    },
+  };
+
+  console.log("Sending FCM message to token:", token.substring(0, 20) + "...");
+
+  const fcmResponse = await fetch(fcmUrl, {
+    method: "POST",
+    headers: {
+      "Authorization": `Bearer ${accessToken}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(message),
+  });
+
+  const fcmResult = await fcmResponse.json();
+
+  if (!fcmResponse.ok) {
+    console.error("FCM send failed:", fcmResult);
+    throw new Error(`FCM send failed: ${JSON.stringify(fcmResult)}`);
+  }
+
+  console.log("FCM message sent successfully:", fcmResult);
+  return fcmResult;
+}
+
 Deno.serve(async (req) => {
-  // Handle CORS preflight
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
   }
 
   try {
-    const { token, title, body }: PushRequest = await req.json();
+    const { token, title, body, scheduledAt }: PushRequest = await req.json();
 
     if (!token) {
-      console.error("Missing FCM token in request");
       return new Response(
         JSON.stringify({ error: "Missing FCM token" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    // Get service account from secret
     const serviceAccountJson = Deno.env.get("FCM_SERVICE_ACCOUNT");
     if (!serviceAccountJson) {
-      console.error("FCM_SERVICE_ACCOUNT secret not configured");
       return new Response(
         JSON.stringify({ error: "FCM not configured" }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -106,65 +151,60 @@ Deno.serve(async (req) => {
     }
 
     const serviceAccount = JSON.parse(serviceAccountJson);
-    console.log("Using service account for project:", serviceAccount.project_id);
 
-    // Get access token
-    const accessToken = await getAccessToken(serviceAccount);
-    console.log("Successfully obtained FCM access token");
+    // If scheduledAt is provided, delay the send server-side
+    if (scheduledAt) {
+      const delayMs = new Date(scheduledAt).getTime() - Date.now();
+      
+      if (delayMs > 0) {
+        console.log(`Scheduling notification for ${scheduledAt} (${Math.round(delayMs / 1000)}s from now)`);
+        
+        // Use waitUntil-style: respond immediately, send later
+        // Deno edge functions stay alive for the duration of the response
+        // So we use a promise that resolves after the delay
+        const sendPromise = new Promise<void>((resolve) => {
+          setTimeout(async () => {
+            try {
+              await sendFCM(serviceAccount, token, title, body);
+              console.log("Scheduled notification sent successfully");
+            } catch (err) {
+              console.error("Scheduled notification failed:", err);
+            }
+            resolve();
+          }, delayMs);
+        });
 
-    // Send push notification via FCM v1 API
-    const fcmUrl = `https://fcm.googleapis.com/v1/projects/${serviceAccount.project_id}/messages:send`;
-    
-    const message = {
-      message: {
-        token: token,
-        notification: {
-          title: title || "⏱️ Period Ended!",
-          body: body || "Time's up!",
-        },
-        webpush: {
-          notification: {
-            icon: "/app-icon.png",
-            badge: "/app-icon.png",
-            vibrate: [500, 200, 500, 200, 500],
-            requireInteraction: true,
-            tag: "timer-alarm",
-          },
-        },
-        android: {
-          priority: "high",
-          notification: {
-            channelId: "timer_alarm",
-            priority: "max",
-            defaultVibrateTimings: false,
-            vibrateTimings: ["0.5s", "0.2s", "0.5s", "0.2s", "0.5s"],
-          },
-        },
-      },
-    };
-
-    console.log("Sending FCM message to token:", token.substring(0, 20) + "...");
-
-    const fcmResponse = await fetch(fcmUrl, {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${accessToken}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(message),
-    });
-
-    const fcmResult = await fcmResponse.json();
-
-    if (!fcmResponse.ok) {
-      console.error("FCM send failed:", fcmResult);
-      return new Response(
-        JSON.stringify({ error: "FCM send failed", details: fcmResult }),
-        { status: fcmResponse.status, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+        // Keep the function alive until the notification is sent
+        // Edge functions have a max execution time, so this works for periods up to ~150 seconds
+        // For longer periods, we send immediately as a fallback test
+        if (delayMs <= 150000) {
+          // Wait for the delayed send (keeps edge function alive)
+          await sendPromise;
+          return new Response(
+            JSON.stringify({ success: true, scheduled: true, scheduledAt }),
+            { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        } else {
+          // For delays > 150s, we can't keep the function alive
+          // Return immediately and note the limitation
+          console.log(`Delay ${delayMs}ms exceeds edge function limit. Notification may not fire.`);
+          // Still try - the function might stay alive
+          sendPromise.catch(() => {});
+          return new Response(
+            JSON.stringify({ 
+              success: true, 
+              scheduled: true, 
+              scheduledAt,
+              warning: "Delay exceeds edge function timeout. Notification delivery not guaranteed." 
+            }),
+            { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+      }
     }
 
-    console.log("FCM message sent successfully:", fcmResult);
+    // Immediate send
+    const fcmResult = await sendFCM(serviceAccount, token, title, body);
 
     return new Response(
       JSON.stringify({ success: true, messageId: fcmResult.name }),

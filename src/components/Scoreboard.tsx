@@ -1,9 +1,10 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { GameFormat } from '@/types/game';
-import { Play, Pause, RotateCcw, SkipForward, ArrowLeft } from 'lucide-react';
+import { Play, Pause, RotateCcw, SkipForward, ArrowLeft, Sun, SunDim } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useVibrate } from '@/hooks/useVibrate';
 import { usePushNotifications } from '@/hooks/usePushNotifications';
+import { useWakeLock } from '@/hooks/useWakeLock';
 import soccerBallIcon from '@/assets/soccer-ball-icon.png';
 
 interface ScoreboardProps {
@@ -25,6 +26,7 @@ const Scoreboard = ({ format, onBack }: ScoreboardProps) => {
     scheduleAlarm, 
     cancelScheduledAlarm 
   } = usePushNotifications();
+  const { isActive: isWakeLockActive, request: requestWakeLock, release: releaseWakeLock } = useWakeLock();
   const [homeScore, setHomeScore] = useState(0);
   const [awayScore, setAwayScore] = useState(0);
   const [homeName, setHomeName] = useState('HOME');
@@ -42,12 +44,15 @@ const Scoreboard = ({ format, onBack }: ScoreboardProps) => {
   const animationFrameRef = useRef<number | null>(null);
   const alarmTimeoutRef = useRef<number | null>(null);
 
-  // Auto-initialize push notifications on mount
+  // Auto-initialize push notifications and wake lock on mount
   useEffect(() => {
     if (isPushSupported && !fcmToken) {
       initializePush();
     }
-  }, [isPushSupported, fcmToken, initializePush]);
+    // Request wake lock to keep screen on during game
+    requestWakeLock();
+    return () => { releaseWakeLock(); };
+  }, [isPushSupported, fcmToken, initializePush, requestWakeLock, releaseWakeLock]);
 
   const playAlarm = useCallback(() => {
     // Strong vibration pattern - long pulses for better notice
@@ -315,10 +320,19 @@ const Scoreboard = ({ format, onBack }: ScoreboardProps) => {
             <img src={soccerBallIcon} alt="Soccer Ball" className="h-6 w-6 brightness-0 invert" />
             Scoreboard
           </h1>
-          <span className="flex flex-col items-center rounded-full bg-primary/20 px-3 py-1 text-primary">
-            <span className="block text-sm font-bold leading-none">{format.ageGroup}</span>
-            <span className="block text-xs font-semibold leading-none">{format.format}</span>
-          </span>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => isWakeLockActive ? releaseWakeLock() : requestWakeLock()}
+              className="text-muted-foreground hover:text-foreground"
+              title={isWakeLockActive ? 'Screen stays on (tap to disable)' : 'Screen may turn off (tap to keep on)'}
+            >
+              {isWakeLockActive ? <Sun className="h-5 w-5 text-primary" /> : <SunDim className="h-5 w-5" />}
+            </button>
+            <span className="flex flex-col items-center rounded-full bg-primary/20 px-3 py-1 text-primary">
+              <span className="block text-sm font-bold leading-none">{format.ageGroup}</span>
+              <span className="block text-xs font-semibold leading-none">{format.format}</span>
+            </span>
+          </div>
         </div>
       </div>
 
