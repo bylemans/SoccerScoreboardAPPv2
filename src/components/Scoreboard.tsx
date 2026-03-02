@@ -64,7 +64,8 @@ const Scoreboard = ({ format, onBack }: ScoreboardProps) => {
     // Request wake lock to keep screen on during game
     requestWakeLock();
     return () => { releaseWakeLock(); };
-  }, [isPushSupported, fcmToken, initializePush, requestWakeLock, releaseWakeLock]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isPushSupported, fcmToken, initializePush]);
 
   const playAlarm = useCallback(() => {
     // Strong vibration pattern - long pulses for better notice
