@@ -17,6 +17,14 @@ interface PeriodScore {
   away: number;
 }
 
+interface CardEntry {
+  team: 'home' | 'away';
+  type: 'yellow' | 'red';
+  number: string;
+}
+
+const CARD_ELIGIBLE_FORMATS = ['u10-13', 'u14-17', 'u19-21'];
+
 const Scoreboard = ({ format, onBack }: ScoreboardProps) => {
   const { vibrate } = useVibrate();
   const { 
@@ -39,6 +47,10 @@ const Scoreboard = ({ format, onBack }: ScoreboardProps) => {
   const [periodScores, setPeriodScores] = useState<PeriodScore[]>(
     Array.from({ length: format.periodCount }, () => ({ home: 0, away: 0 }))
   );
+  const [cards, setCards] = useState<CardEntry[]>([]);
+  const [cardInput, setCardInput] = useState<{ team: 'home' | 'away'; type: 'yellow' | 'red' } | null>(null);
+  const [cardNumber, setCardNumber] = useState('');
+  const showCards = CARD_ELIGIBLE_FORMATS.includes(format.id);
   const audioContextRef = useRef<AudioContext | null>(null);
   const endTimeRef = useRef<number | null>(null);
   const animationFrameRef = useRef<number | null>(null);
@@ -273,6 +285,7 @@ const Scoreboard = ({ format, onBack }: ScoreboardProps) => {
     setIsTimerEnded(false);
     endTimeRef.current = null;
     setPeriodScores(Array.from({ length: format.periodCount }, () => ({ home: 0, away: 0 })));
+    setCards([]);
   };
 
   const adjustScore = (team: 'home' | 'away', delta: number) => {
@@ -491,12 +504,116 @@ const Scoreboard = ({ format, onBack }: ScoreboardProps) => {
               <div className="mb-1 text-xs font-bold text-muted-foreground">
                 {getShortPeriodLabel(index)}
               </div>
-              <div className="text-sm font-medium text-score-home">{score.home}</div>
-              <div className="text-sm font-medium text-score-away">{score.away}</div>
+              <div className="text-sm font-medium">
+                <span className="text-score-home">{score.home}</span>
+                <span className="text-muted-foreground"> - </span>
+                <span className="text-score-away">{score.away}</span>
+              </div>
             </div>
           ))}
         </div>
       </div>
+
+      {/* Cards Section - U10 and older */}
+      {showCards && (
+        <div className="w-full max-w-lg rounded-xl bg-card p-4">
+          <h3 className="mb-3 text-center text-base font-semibold text-foreground">Cards</h3>
+          <div className="grid grid-cols-[1fr_auto_1fr] gap-2">
+            {/* Header */}
+            <div className="text-center text-xs font-bold text-muted-foreground">{homeName}</div>
+            <div />
+            <div className="text-center text-xs font-bold text-muted-foreground">{awayName}</div>
+
+            {/* Yellow cards row */}
+            <div className="flex flex-wrap items-center justify-center gap-1 min-h-[2.5rem]">
+              {cards.filter(c => c.team === 'home' && c.type === 'yellow').map((c, i) => (
+                <span key={i} className="rounded bg-yellow-400 px-1.5 py-0.5 text-xs font-bold text-black">#{c.number}</span>
+              ))}
+            </div>
+            <button
+              onClick={() => { setCardInput({ team: 'home', type: 'yellow' }); setCardNumber(''); }}
+              className="flex h-10 w-10 items-center justify-center rounded-lg bg-yellow-400 shadow-md mx-auto"
+              title="Yellow Card"
+            >
+              <div className="h-6 w-4 rounded-sm bg-yellow-400 border border-yellow-600" />
+            </button>
+            <div className="flex flex-wrap items-center justify-center gap-1 min-h-[2.5rem]">
+              {cards.filter(c => c.team === 'away' && c.type === 'yellow').map((c, i) => (
+                <span key={i} className="rounded bg-yellow-400 px-1.5 py-0.5 text-xs font-bold text-black">#{c.number}</span>
+              ))}
+            </div>
+
+            {/* Red cards row */}
+            <div className="flex flex-wrap items-center justify-center gap-1 min-h-[2.5rem]">
+              {cards.filter(c => c.team === 'home' && c.type === 'red').map((c, i) => (
+                <span key={i} className="rounded bg-red-600 px-1.5 py-0.5 text-xs font-bold text-white">#{c.number}</span>
+              ))}
+            </div>
+            <button
+              onClick={() => { setCardInput({ team: 'home', type: 'red' }); setCardNumber(''); }}
+              className="flex h-10 w-10 items-center justify-center rounded-lg bg-red-600 shadow-md mx-auto"
+              title="Red Card"
+            >
+              <div className="h-6 w-4 rounded-sm bg-red-600 border border-red-800" />
+            </button>
+            <div className="flex flex-wrap items-center justify-center gap-1 min-h-[2.5rem]">
+              {cards.filter(c => c.team === 'away' && c.type === 'red').map((c, i) => (
+                <span key={i} className="rounded bg-red-600 px-1.5 py-0.5 text-xs font-bold text-white">#{c.number}</span>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Card Number Input Dialog */}
+      {cardInput && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60" onClick={() => setCardInput(null)}>
+          <div className="w-72 rounded-xl bg-card p-6" onClick={e => e.stopPropagation()}>
+            <h3 className="mb-1 text-center text-lg font-bold text-foreground">
+              {cardInput.type === 'yellow' ? '🟨' : '🟥'} {cardInput.type === 'yellow' ? 'Yellow' : 'Red'} Card
+            </h3>
+            <p className="mb-4 text-center text-sm text-muted-foreground">Which team?</p>
+            <div className="mb-4">
+              <input
+                type="text"
+                inputMode="numeric"
+                placeholder="Player number"
+                value={cardNumber}
+                onChange={e => setCardNumber(e.target.value)}
+                className="w-full rounded-lg border border-border bg-background px-4 py-3 text-center text-lg font-bold text-foreground outline-none focus:border-primary"
+                maxLength={3}
+                autoFocus
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <Button
+                onClick={() => {
+                  if (cardNumber.trim()) {
+                    vibrate(10);
+                    setCards(prev => [...prev, { team: 'home', type: cardInput.type, number: cardNumber.trim() }]);
+                    setCardInput(null);
+                  }
+                }}
+                className="bg-score-home text-white hover:bg-score-home/80"
+              >
+                {homeName}
+              </Button>
+              <Button
+                onClick={() => {
+                  if (cardNumber.trim()) {
+                    vibrate(10);
+                    setCards(prev => [...prev, { team: 'away', type: cardInput.type, number: cardNumber.trim() }]);
+                    setCardInput(null);
+                  }
+                }}
+                className="bg-score-away text-white hover:bg-score-away/80"
+              >
+                {awayName}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
