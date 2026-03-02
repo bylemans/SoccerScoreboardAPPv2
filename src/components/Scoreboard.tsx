@@ -334,13 +334,6 @@ const Scoreboard = ({ format, onBack }: ScoreboardProps) => {
             Scoreboard
           </h1>
           <div className="flex items-center gap-2">
-            <button
-              onClick={() => isWakeLockActive ? releaseWakeLock() : requestWakeLock()}
-              className="text-muted-foreground hover:text-foreground"
-              title={isWakeLockActive ? 'Screen stays on (tap to disable)' : 'Screen may turn off (tap to keep on)'}
-            >
-              {isWakeLockActive ? <Sun className="h-5 w-5 text-primary" /> : <SunDim className="h-5 w-5" />}
-            </button>
             <span className="flex flex-col items-center rounded-full bg-primary/20 px-3 py-1 text-primary">
               <span className="block text-sm font-bold leading-none">{format.ageGroup}</span>
               <span className="block text-xs font-semibold leading-none">{format.format}</span>
@@ -350,7 +343,20 @@ const Scoreboard = ({ format, onBack }: ScoreboardProps) => {
       </div>
 
       {/* Timer Section */}
-      <div className="mb-4 w-full max-w-lg rounded-xl bg-card p-6">
+      <div className="relative mb-4 w-full max-w-lg rounded-xl bg-card p-6">
+        {/* Wake Lock toggle */}
+        <button
+          onClick={() => isWakeLockActive ? releaseWakeLock() : requestWakeLock()}
+          className={`absolute right-3 top-3 flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold transition-colors ${
+            isWakeLockActive
+              ? 'bg-primary/20 text-primary'
+              : 'bg-muted text-muted-foreground'
+          }`}
+          title={isWakeLockActive ? 'Screen stays on (tap to disable)' : 'Screen may turn off (tap to keep on)'}
+        >
+          {isWakeLockActive ? <Sun className="h-4 w-4" /> : <SunDim className="h-4 w-4" />}
+          {isWakeLockActive ? 'ON' : 'OFF'}
+        </button>
         <p className="mb-2 text-center text-base text-muted-foreground">
           {getPeriodLabel()}
         </p>
@@ -516,7 +522,7 @@ const Scoreboard = ({ format, onBack }: ScoreboardProps) => {
 
       {/* Cards Section - U10 and older */}
       {showCards && (
-        <div className="w-full max-w-lg rounded-xl bg-card p-4">
+        <div className="mt-4 w-full max-w-lg rounded-xl bg-card p-4">
           <h3 className="mb-3 text-center text-base font-semibold text-foreground">Cards</h3>
           <div className="grid grid-cols-[1fr_auto_1fr] gap-2">
             {/* Header */}
