@@ -1,10 +1,10 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { GameFormat } from '@/types/game';
-import { Play, Pause, RotateCcw, SkipForward, ArrowLeft, Sun, SunDim } from 'lucide-react';
+import { Play, Pause, RotateCcw, SkipForward, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useVibrate } from '@/hooks/useVibrate';
 import { usePushNotifications } from '@/hooks/usePushNotifications';
-import { useWakeLock } from '@/hooks/useWakeLock';
+
 import soccerBallIcon from '@/assets/soccer-ball-icon.png';
 
 interface ScoreboardProps {
@@ -34,7 +34,7 @@ const Scoreboard = ({ format, onBack }: ScoreboardProps) => {
     scheduleAlarm, 
     cancelScheduledAlarm 
   } = usePushNotifications();
-  const { isActive: isWakeLockActive, request: requestWakeLock, release: releaseWakeLock } = useWakeLock();
+  
   const [homeScore, setHomeScore] = useState(0);
   const [awayScore, setAwayScore] = useState(0);
   const [homeName, setHomeName] = useState('HOME');
@@ -56,14 +56,11 @@ const Scoreboard = ({ format, onBack }: ScoreboardProps) => {
   const animationFrameRef = useRef<number | null>(null);
   const alarmTimeoutRef = useRef<number | null>(null);
 
-  // Auto-initialize push notifications and wake lock on mount
+  // Auto-initialize push notifications on mount
   useEffect(() => {
     if (isPushSupported && !fcmToken) {
       initializePush();
     }
-    // Request wake lock to keep screen on during game
-    requestWakeLock();
-    return () => { releaseWakeLock(); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isPushSupported, fcmToken, initializePush]);
 
@@ -344,20 +341,7 @@ const Scoreboard = ({ format, onBack }: ScoreboardProps) => {
       </div>
 
       {/* Timer Section */}
-      <div className="relative mb-4 w-full max-w-lg rounded-xl bg-card p-6">
-        {/* Wake Lock toggle */}
-        <button
-          onClick={() => isWakeLockActive ? releaseWakeLock() : requestWakeLock()}
-          className={`absolute right-3 top-3 flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold transition-colors ${
-            isWakeLockActive
-              ? 'bg-primary/20 text-primary'
-              : 'bg-muted text-muted-foreground'
-          }`}
-          title={isWakeLockActive ? 'Screen stays on (tap to disable)' : 'Screen may turn off (tap to keep on)'}
-        >
-          {isWakeLockActive ? <Sun className="h-4 w-4" /> : <SunDim className="h-4 w-4" />}
-          {isWakeLockActive ? 'ON' : 'OFF'}
-        </button>
+      <div className="mb-4 w-full max-w-lg rounded-xl bg-card p-6">
         <p className="mb-2 text-center text-base text-muted-foreground">
           {getPeriodLabel()}
         </p>
