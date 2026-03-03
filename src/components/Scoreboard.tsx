@@ -515,27 +515,9 @@ const Scoreboard = ({ format, onBack }: ScoreboardProps) => {
             <div className="text-center text-xs font-bold text-muted-foreground">{awayName}</div>
           </div>
 
-          {/* Buttons row: yellow + red side by side in center */}
-          <div className="mb-3 flex justify-center gap-3">
-            <button
-              onClick={() => { setCardInput({ team: 'home', type: 'yellow' }); setCardNumber(''); }}
-              className="flex h-10 w-10 items-center justify-center rounded-lg bg-yellow-400 shadow-md"
-              title="Yellow Card"
-            >
-              <div className="h-6 w-4 rounded-sm bg-yellow-400 border border-yellow-600" />
-            </button>
-            <button
-              onClick={() => { setCardInput({ team: 'home', type: 'red' }); setCardNumber(''); }}
-              className="flex h-10 w-10 items-center justify-center rounded-lg bg-red-600 shadow-md"
-              title="Red Card"
-            >
-              <div className="h-6 w-4 rounded-sm bg-red-600 border border-red-800" />
-            </button>
-          </div>
-
-          {/* Cards display: HOME cards | divider | AWAY cards, yellow first then red */}
-          <div className="grid grid-cols-[1fr_auto_1fr] gap-2">
-            <div className="flex flex-wrap items-center justify-center gap-1 min-h-[1.5rem]">
+          {/* Cards row: HOME cards | buttons | AWAY cards */}
+          <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
+            <div className="flex flex-wrap items-center justify-center gap-1 min-h-[2.5rem]">
               {cards.filter(c => c.team === 'home' && c.type === 'yellow').map((c, i) => (
                 <span key={i} className="rounded bg-yellow-400 px-1.5 py-0.5 text-xs font-bold text-black">#{c.number}</span>
               ))}
@@ -543,8 +525,23 @@ const Scoreboard = ({ format, onBack }: ScoreboardProps) => {
                 <span key={i} className="rounded bg-red-600 px-1.5 py-0.5 text-xs font-bold text-white">#{c.number}</span>
               ))}
             </div>
-            <div className="w-px bg-border" />
-            <div className="flex flex-wrap items-center justify-center gap-1 min-h-[1.5rem]">
+            <div className="flex gap-2">
+              <button
+                onClick={() => { setCardInput({ team: 'home', type: 'yellow' }); setCardNumber(''); }}
+                className="flex h-10 w-10 items-center justify-center rounded-lg bg-yellow-400 shadow-md"
+                title="Yellow Card"
+              >
+                <div className="h-6 w-4 rounded-sm bg-yellow-400 border border-yellow-600" />
+              </button>
+              <button
+                onClick={() => { setCardInput({ team: 'home', type: 'red' }); setCardNumber(''); }}
+                className="flex h-10 w-10 items-center justify-center rounded-lg bg-red-600 shadow-md"
+                title="Red Card"
+              >
+                <div className="h-6 w-4 rounded-sm bg-red-600 border border-red-800" />
+              </button>
+            </div>
+            <div className="flex flex-wrap items-center justify-center gap-1 min-h-[2.5rem]">
               {cards.filter(c => c.team === 'away' && c.type === 'yellow').map((c, i) => (
                 <span key={i} className="rounded bg-yellow-400 px-1.5 py-0.5 text-xs font-bold text-black">#{c.number}</span>
               ))}
