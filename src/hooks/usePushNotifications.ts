@@ -58,40 +58,59 @@ export const usePushNotifications = () => {
     }
   }, [fcmToken]);
 
-  // Schedule a server-side push notification
+  // Schedule a server-side push notification via the database
   const scheduleAlarm = useCallback(async (delayMs: number, title: string, body: string) => {
     if (!fcmToken) {
       console.log('No FCM token, cannot schedule alarm');
       return;
     }
 
-    const scheduledAt = new Date(Date.now() + delayMs).toISOString();
+    const sendAt = new Date(Date.now() + delayMs).toISOString();
     
     try {
-      const { data, error } = await supabase.functions.invoke('send-push-notification', {
-        body: { 
-          token: fcmToken, 
-          title, 
-          body, 
-          scheduledAt 
-        }
-      });
+      // Cancel any existing scheduled alarm first
+      if (scheduledIdRef.current) {
+        await supabase
+          .from('scheduled_notifications')
+          .delete()
+          .eq('id', scheduledIdRef.current);
+      }
+
+      const { data, error } = await supabase
+        .from('scheduled_notifications')
+        .insert({
+          fcm_token: fcmToken,
+          title,
+          body,
+          send_at: sendAt,
+        })
+        .select('id')
+        .single();
 
       if (error) {
-        console.error('Error scheduling push:', error);
+        console.error('Error scheduling notification:', error);
       } else {
-        console.log(`Alarm scheduled server-side for ${scheduledAt}`, data);
-        scheduledIdRef.current = scheduledAt;
+        console.log(`Alarm scheduled in DB for ${sendAt}, id: ${data.id}`);
+        scheduledIdRef.current = data.id;
       }
     } catch (error) {
-      console.error('Failed to schedule push:', error);
+      console.error('Failed to schedule notification:', error);
     }
   }, [fcmToken]);
 
-  const cancelScheduledAlarm = useCallback(() => {
-    // Client-side cancel marker; server alarm may still fire but that's acceptable
-    scheduledIdRef.current = null;
-    console.log('Scheduled alarm reference cleared');
+  const cancelScheduledAlarm = useCallback(async () => {
+    if (scheduledIdRef.current) {
+      try {
+        await supabase
+          .from('scheduled_notifications')
+          .delete()
+          .eq('id', scheduledIdRef.current);
+        console.log('Scheduled alarm cancelled:', scheduledIdRef.current);
+      } catch (err) {
+        console.error('Failed to cancel alarm:', err);
+      }
+      scheduledIdRef.current = null;
+    }
   }, []);
 
   // Setup foreground message handler

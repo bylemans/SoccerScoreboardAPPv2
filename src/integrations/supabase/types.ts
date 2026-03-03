@@ -14,7 +14,36 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      scheduled_notifications: {
+        Row: {
+          body: string
+          created_at: string
+          fcm_token: string
+          id: string
+          send_at: string
+          sent: boolean
+          title: string
+        }
+        Insert: {
+          body?: string
+          created_at?: string
+          fcm_token: string
+          id?: string
+          send_at: string
+          sent?: boolean
+          title?: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          fcm_token?: string
+          id?: string
+          send_at?: string
+          sent?: boolean
+          title?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
