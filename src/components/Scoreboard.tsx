@@ -479,9 +479,6 @@ const Scoreboard = ({ format, onBack }: ScoreboardProps) => {
 
       {/* Period Breakdown */}
       <div className="w-full max-w-lg rounded-xl bg-card p-4">
-        <h3 className="mb-3 text-center text-base font-semibold text-foreground">
-          {format.periodName === 'quarter' ? 'Quarter' : format.periodName === 'half' ? 'Half' : 'Period'} Breakdown
-        </h3>
         <div className="grid gap-2" style={{ gridTemplateColumns: `repeat(${format.periodCount}, 1fr)` }}>
           {periodScores.map((score, index) => (
             <div
