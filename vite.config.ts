@@ -53,9 +53,6 @@ export default defineConfig(({ mode }) => ({
           },
         ],
       },
-      workbox: {
-        globPatterns: ["**/*.{js,css,html,ico,png,svg}"],
-      },
     }),
   ].filter(Boolean),
 
