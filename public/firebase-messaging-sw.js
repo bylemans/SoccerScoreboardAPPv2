@@ -1,5 +1,5 @@
-// Firebase Cloud Messaging Service Worker
-// This runs in the background to receive push notifications
+// Combined Service Worker: PWA (Workbox) + Firebase Cloud Messaging
+// This single SW handles both caching and push notifications
 
 importScripts('https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js');
 importScripts('https://www.gstatic.com/firebasejs/10.7.1/firebase-messaging-compat.js');
@@ -18,7 +18,7 @@ const messaging = firebase.messaging();
 
 // Handle background messages
 messaging.onBackgroundMessage((payload) => {
-  console.log('[firebase-messaging-sw.js] Received background message:', payload);
+  console.log('[SW] Received background message:', payload);
 
   const notificationTitle = payload.notification?.title || '⏱️ Period Ended!';
   const notificationOptions = {
@@ -38,11 +38,9 @@ messaging.onBackgroundMessage((payload) => {
 
 // Handle notification click
 self.addEventListener('notificationclick', (event) => {
-  console.log('[firebase-messaging-sw.js] Notification clicked:', event);
-  
+  console.log('[SW] Notification clicked:', event);
   event.notification.close();
 
-  // Focus existing window or open new one
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windowClients) => {
       for (const client of windowClients) {
@@ -55,4 +53,35 @@ self.addEventListener('notificationclick', (event) => {
       }
     })
   );
+});
+
+// Handle push events directly (fallback if onBackgroundMessage doesn't fire)
+self.addEventListener('push', (event) => {
+  if (!event.data) return;
+  
+  try {
+    const payload = event.data.json();
+    console.log('[SW] Push event received:', payload);
+    
+    // Only show notification if Firebase didn't already handle it
+    // Firebase's onBackgroundMessage will handle messages with notification payload
+    // This catches data-only messages
+    if (!payload.notification && payload.data) {
+      const title = payload.data.title || '⏱️ Period Ended!';
+      const body = payload.data.body || 'Time is up!';
+      
+      event.waitUntil(
+        self.registration.showNotification(title, {
+          body,
+          icon: '/app-icon.png',
+          badge: '/app-icon.png',
+          vibrate: [500, 200, 500, 200, 500, 200, 500],
+          tag: 'timer-alarm',
+          requireInteraction: true,
+        })
+      );
+    }
+  } catch (e) {
+    console.error('[SW] Error processing push:', e);
+  }
 });
