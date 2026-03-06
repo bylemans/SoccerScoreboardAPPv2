@@ -40,9 +40,26 @@ export const requestNotificationPermission = async (): Promise<string | null> =>
       return null;
     }
 
-    // Register service worker first
-    const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
-    console.log('Service Worker registered:', registration);
+    // Use existing service worker if available, or register Firebase SW
+    let registration: ServiceWorkerRegistration;
+    
+    const existingReg = await navigator.serviceWorker.getRegistration('/');
+    if (existingReg) {
+      registration = existingReg;
+      console.log('Using existing Service Worker registration');
+    } else {
+      registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
+      console.log('Registered Firebase Service Worker');
+    }
+    
+    // Wait for SW to be active
+    if (registration.installing) {
+      await new Promise<void>((resolve) => {
+        registration.installing!.addEventListener('statechange', (e) => {
+          if ((e.target as ServiceWorker).state === 'activated') resolve();
+        });
+      });
+    }
 
     const messaging = getFirebaseMessaging();
     if (!messaging) {

@@ -21,6 +21,13 @@ export default defineConfig(({ mode }) => ({
     VitePWA({
       registerType: "autoUpdate",
       includeAssets: ["favicon.ico", "soccer-ball-icon.png", "app-icon.png"],
+      // Use firebase-messaging-sw.js as the service worker to handle both PWA + push
+      srcDir: "public",
+      filename: "firebase-messaging-sw.js",
+      strategies: "injectManifest",
+      injectManifest: {
+        injectionPoint: undefined, // Don't inject workbox precache manifest
+      },
       manifest: {
         name: "Soccer Scoreboard APP",
         short_name: "Scoreboard",
@@ -45,9 +52,6 @@ export default defineConfig(({ mode }) => ({
             purpose: "any maskable",
           },
         ],
-      },
-      workbox: {
-        globPatterns: ["**/*.{js,css,html,ico,png,svg}"],
       },
     }),
   ].filter(Boolean),
