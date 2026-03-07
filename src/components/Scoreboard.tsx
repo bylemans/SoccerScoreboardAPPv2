@@ -57,9 +57,12 @@ const Scoreboard = ({ format, onBack }: ScoreboardProps) => {
   const alarmTimeoutRef = useRef<number | null>(null);
 
   // Auto-initialize push notifications on mount
-  useEffect(() => {
+   useEffect(() => {
+    console.log('[Push Debug] isPushSupported:', isPushSupported, 'fcmToken:', fcmToken ? 'YES' : 'NO');
     if (isPushSupported && !fcmToken) {
-      initializePush();
+      initializePush().then(token => {
+        console.log('[Push Debug] initializePush result:', token ? 'token obtained' : 'NO TOKEN');
+      });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isPushSupported, fcmToken, initializePush]);
