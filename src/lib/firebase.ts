@@ -43,13 +43,16 @@ export const requestNotificationPermission = async (): Promise<string | null> =>
     // Use existing service worker if available, or register Firebase SW
     let registration: ServiceWorkerRegistration;
     
-    const existingReg = await navigator.serviceWorker.getRegistration('/');
+    const basePath = import.meta.env.BASE_URL || '/';
+    const swUrl = `${basePath}firebase-messaging-sw.js`;
+    
+    const existingReg = await navigator.serviceWorker.getRegistration(basePath);
     if (existingReg) {
       registration = existingReg;
       console.log('Using existing Service Worker registration');
     } else {
-      registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
-      console.log('Registered Firebase Service Worker');
+      registration = await navigator.serviceWorker.register(swUrl, { scope: basePath });
+      console.log('Registered Firebase Service Worker at', swUrl);
     }
     
     // Wait for SW to be active
