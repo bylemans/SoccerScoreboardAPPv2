@@ -68,13 +68,13 @@ export const usePushNotifications = () => {
     const sendAt = new Date(Date.now() + delayMs).toISOString();
     
     try {
-      // Cancel any existing scheduled alarm first
-      if (scheduledIdRef.current) {
-        await supabase
-          .from('scheduled_notifications')
-          .delete()
-          .eq('id', scheduledIdRef.current);
-      }
+      // Delete ALL unsent notifications for this device token first
+      // This prevents stale alarms from previous sessions firing early
+      await supabase
+        .from('scheduled_notifications')
+        .delete()
+        .eq('fcm_token', fcmToken)
+        .eq('sent', false);
 
       const { data, error } = await supabase
         .from('scheduled_notifications')
