@@ -4,41 +4,44 @@ import path from "path";
 import { componentTagger } from "lovable-tagger";
 import { VitePWA } from "vite-plugin-pwa";
 
-export default defineConfig(({ mode }) => ({
-  base: mode === "production" && process.env.GITHUB_PAGES ? "/SoccerScoreboardAPPv2/" : "/",
+export default defineConfig(({ mode }) => {
+  const isGitHubPages = mode === "production" && process.env.GITHUB_PAGES === "true";
+  const basePath = isGitHubPages ? "/SoccerScoreboardAPPv2/" : "/";
 
-  server: {
-    host: "::",
-    port: 8080,
-    hmr: {
-      overlay: false,
-    },
-  },
+  return {
+    base: basePath,
 
-  plugins: [
-    react(),
-    mode === "development" && componentTagger(),
-    VitePWA({
-      registerType: "autoUpdate",
-      includeAssets: ["favicon.ico", "soccer-ball-icon.png", "app-icon.png"],
-      // Use firebase-messaging-sw.js as the service worker to handle both PWA + push
-      srcDir: "public",
-      filename: "firebase-messaging-sw.js",
-      strategies: "injectManifest",
-      injectManifest: {
-        injectionPoint: undefined, // Don't inject workbox precache manifest
+    server: {
+      host: "::",
+      port: 8080,
+      hmr: {
+        overlay: false,
       },
-      manifest: {
-        name: "Soccer Scoreboard APP",
-        short_name: "Scoreboard",
-        description: "Track soccer game scores with timer and period tracking",
-        theme_color: "#1a332a",
-        background_color: "#1a332a",
-        display: "standalone",
-        orientation: "portrait",
-        start_url: "/",
-        scope: "/",
-        icons: [
+    },
+
+    plugins: [
+      react(),
+      mode === "development" && componentTagger(),
+      VitePWA({
+        registerType: "autoUpdate",
+        includeAssets: ["favicon.ico", "soccer-ball-icon.png", "app-icon.png"],
+        srcDir: "public",
+        filename: "firebase-messaging-sw.js",
+        strategies: "injectManifest",
+        injectManifest: {
+          injectionPoint: undefined,
+        },
+        manifest: {
+          name: "Soccer Scoreboard APP",
+          short_name: "Scoreboard",
+          description: "Track soccer game scores with timer and period tracking",
+          theme_color: "#1a332a",
+          background_color: "#1a332a",
+          display: "standalone",
+          orientation: "portrait",
+          start_url: basePath,
+          scope: basePath,
+          icons: [
           {
             src: "app-icon.png",
             sizes: "192x192",
