@@ -5,7 +5,7 @@ import { componentTagger } from "lovable-tagger";
 import { VitePWA } from "vite-plugin-pwa";
 
 export default defineConfig(({ mode }) => ({
-  base: "/SoccerScoreboardAPPv2/", // 👈 REQUIRED for GitHub Pages
+  base: "/",
 
   server: {
     host: "::",
@@ -36,8 +36,8 @@ export default defineConfig(({ mode }) => ({
         background_color: "#1a332a",
         display: "standalone",
         orientation: "portrait",
-        start_url: "/SoccerScoreboardAPPv2/",
-        scope: "/SoccerScoreboardAPPv2/",
+        start_url: "/",
+        scope: "/",
         icons: [
           {
             src: "app-icon.png",
