@@ -57,10 +57,11 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          cp android/app/build/outputs/apk/debug/app-debug.apk soccer-scoreboard.apk
           gh release delete android-latest --yes 2>/dev/null || true
           git push origin :refs/tags/android-latest 2>/dev/null || true
           gh release create android-latest \
             --title "Android – Latest Build" \
             --notes "Latest Android APK. Enable *Install from unknown sources* on your phone, then download and tap to install." \
             --latest=false \
-            "android/app/build/outputs/apk/debug/app-debug.apk#soccer-scoreboard.apk"
+            "soccer-scoreboard.apk"
