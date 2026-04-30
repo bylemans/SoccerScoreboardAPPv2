@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { GameFormat } from '@/types/game';
-import { Play, Pause, RotateCcw, SkipForward, ArrowLeft } from 'lucide-react';
+import { Play, Pause, RotateCcw, SkipForward, SkipBack, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useVibrate } from '@/hooks/useVibrate';
 import { usePushNotifications } from '@/hooks/usePushNotifications';
@@ -255,6 +255,26 @@ const Scoreboard = ({ format, onBack }: ScoreboardProps) => {
     return `P${index + 1}`;
   };
 
+  const handlePrevPeriod = () => {
+    vibrate(15);
+    if (alarmTimeoutRef.current) {
+      window.clearTimeout(alarmTimeoutRef.current);
+      alarmTimeoutRef.current = null;
+    }
+    cancelScheduledAlarm();
+    if (currentPeriod > 1) {
+      const newPeriod = currentPeriod - 1;
+      setCurrentPeriod(newPeriod);
+      setTimeRemaining(format.periodDuration * 60);
+      setIsRunning(false);
+      setIsTimerEnded(false);
+      endTimeRef.current = null;
+      // Recalculate totals from period scores up to the restored period
+      setHomeScore(periodScores.slice(0, newPeriod).reduce((sum, p) => sum + p.home, 0));
+      setAwayScore(periodScores.slice(0, newPeriod).reduce((sum, p) => sum + p.away, 0));
+    }
+  };
+
   const handleNextPeriod = () => {
     vibrate(15);
     if (alarmTimeoutRef.current) {
@@ -401,6 +421,13 @@ const Scoreboard = ({ format, onBack }: ScoreboardProps) => {
                 <Play className="h-4 w-4" /> Play
               </>
             )}
+          </Button>
+          <Button
+            onClick={handlePrevPeriod}
+            disabled={currentPeriod <= 1}
+            className="gap-2 bg-accent text-accent-foreground hover:bg-accent/80"
+          >
+            <SkipBack className="h-4 w-4" /> Prev
           </Button>
           <Button
             onClick={handleNextPeriod}
