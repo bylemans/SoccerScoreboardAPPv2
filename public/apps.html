@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>My Apps – bylemans</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+      background: #0d1117;
+      color: #e6edf3;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    header {
+      padding: 3.5rem 1.5rem 2.5rem;
+      text-align: center;
+      border-bottom: 1px solid #21262d;
+    }
+
+    header h1 {
+      font-size: 2.25rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: #e6edf3;
+    }
+
+    header p {
+      margin-top: 0.5rem;
+      color: #7d8590;
+      font-size: 0.95rem;
+    }
+
+    main {
+      flex: 1;
+      padding: 2.5rem 1.5rem;
+      max-width: 1040px;
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 1.25rem;
+    }
+
+    /* ── Card ── */
+    .card {
+      background: #161b22;
+      border: 1px solid #30363d;
+      border-radius: 14px;
+      padding: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.1rem;
+      transition: border-color 0.2s, transform 0.2s, box-shadow 0.2s;
+    }
+
+    .card:hover {
+      border-color: #3fb950;
+      transform: translateY(-2px);
+      box-shadow: 0 8px 28px rgba(0, 0, 0, 0.45);
+    }
+
+    .card-header {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .card-icon {
+      width: 68px;
+      height: 68px;
+      border-radius: 15px;
+      object-fit: cover;
+      flex-shrink: 0;
+      background: #21262d;
+    }
+
+    .card-title {
+      font-size: 1.05rem;
+      font-weight: 600;
+      line-height: 1.35;
+      color: #e6edf3;
+    }
+
+    .card-description {
+      font-size: 0.875rem;
+      color: #8b949e;
+      line-height: 1.65;
+      flex: 1;
+    }
+
+    /* ── Buttons ── */
+    .btn-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.5rem;
+    }
+
+    .btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.45rem;
+      padding: 0.6rem 0.75rem;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      font-weight: 500;
+      text-decoration: none;
+      cursor: pointer;
+      transition: opacity 0.15s, transform 0.1s;
+      white-space: nowrap;
+    }
+
+    .btn:hover  { opacity: 0.87; transform: translateY(-1px); }
+    .btn:active { opacity: 0.75; transform: translateY(0); }
+
+    .btn-android {
+      background: #3ddc84;
+      color: #000;
+    }
+
+    .btn-ios {
+      background: #f5f5f7;
+      color: #1d1d1f;
+    }
+
+    .btn-web {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.45rem;
+      padding: 0.55rem 0.75rem;
+      border-radius: 8px;
+      font-size: 0.82rem;
+      font-weight: 500;
+      text-decoration: none;
+      background: transparent;
+      color: #58a6ff;
+      border: 1px solid #30363d;
+      transition: border-color 0.15s, opacity 0.15s;
+    }
+
+    .btn-web:hover { border-color: #58a6ff; opacity: 0.85; }
+
+    .btn svg, .btn-web svg {
+      width: 15px;
+      height: 15px;
+      flex-shrink: 0;
+    }
+
+    /* ── Footer ── */
+    footer {
+      text-align: center;
+      padding: 1.5rem;
+      color: #7d8590;
+      font-size: 0.8rem;
+      border-top: 1px solid #21262d;
+    }
+
+    footer a { color: #58a6ff; text-decoration: none; }
+    footer a:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>My Apps</h1>
+  <p>bylemans &middot; Download for Android or iPhone</p>
+</header>
+
+<main>
+  <div class="grid" id="app-grid"></div>
+</main>
+
+<footer>
+  <p>Built by <a href="https://github.com/bylemans" target="_blank" rel="noopener">bylemans</a></p>
+</footer>
+
+<script>
+  // ── ADD APPS HERE ────────────────────────────────────────────────────────────
+  const apps = [
+    {
+      name: "Soccer Scoreboard APP",
+      icon: "https://bylemans.github.io/SoccerScoreboardAPPv2/app-icon.png",
+      description: "Track soccer game scores with a live countdown timer, per-period score breakdown, and yellow/red card tracking. Supports U5 through U21 formats. Vibrates and alarms when a period ends.",
+      android: "https://github.com/bylemans/SoccerScoreboardAPPv2/releases/download/android-latest/soccer-scoreboard.apk",
+      ios: "https://github.com/bylemans/SoccerScoreboardAPPv2/releases/download/ios-latest/SoccerScoreboard.ipa",
+      web: "https://bylemans.github.io/SoccerScoreboardAPPv2/",
+    },
+
+    // ── Template for next app ─────────────────────────────────────────────────
+    // {
+    //   name: "My Next App",
+    //   icon: "https://...",
+    //   description: "Short description shown on the card.",
+    //   android: "https://github.com/bylemans/REPO/releases/download/android-latest/app.apk",
+    //   ios:     "https://github.com/bylemans/REPO/releases/download/ios-latest/App.ipa",
+    //   web:     "https://bylemans.github.io/REPO/",  // optional — remove line to hide button
+    // },
+  ];
+  // ────────────────────────────────────────────────────────────────────────────
+
+  const ANDROID_SVG = `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.523 15.341a.96.96 0 0 1-.96-.96.96.96 0 0 1 .96-.96.96.96 0 0 1 .96.96.96.96 0 0 1-.96.96m-11.046 0a.96.96 0 0 1-.96-.96.96.96 0 0 1 .96-.96.96.96 0 0 1 .96.96.96.96 0 0 1-.96.96M17.8 10.5l1.93-3.34a.4.4 0 0 0-.146-.547.4.4 0 0 0-.547.146l-1.956 3.385A11.9 11.9 0 0 0 12 9.25c-1.8 0-3.498.41-5.08 1.139L4.963 6.759a.4.4 0 0 0-.547-.147.4.4 0 0 0-.146.547L6.2 10.5C3.608 11.938 1.866 14.575 1.75 17.667h20.5C22.134 14.575 20.392 11.938 17.8 10.5"/></svg>`;
+
+  const APPLE_SVG = `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.7 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.32 2.99-2.54 4.09zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z"/></svg>`;
+
+  const WEB_SVG = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>`;
+
+  const FALLBACK_ICON = `data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 68 68'><rect width='68' height='68' rx='15' fill='%2321262d'/><text y='46' x='34' text-anchor='middle' font-size='36' font-family='system-ui'>📱</text></svg>`;
+
+  const grid = document.getElementById('app-grid');
+
+  apps.forEach(app => {
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.innerHTML = `
+      <div class="card-header">
+        <img class="card-icon" src="${app.icon}" alt="${app.name}" onerror="this.src='${FALLBACK_ICON}'">
+        <div class="card-title">${app.name}</div>
+      </div>
+      <p class="card-description">${app.description}</p>
+      <div style="display:flex;flex-direction:column;gap:0.5rem">
+        <div class="btn-row">
+          <a href="${app.android}" class="btn btn-android" download>
+            ${ANDROID_SVG} Android
+          </a>
+          <a href="${app.ios}" class="btn btn-ios" download>
+            ${APPLE_SVG} iPhone
+          </a>
+        </div>
+        ${app.web ? `<a href="${app.web}" class="btn-web" target="_blank" rel="noopener">${WEB_SVG} Open Web App</a>` : ''}
+      </div>
+    `;
+    grid.appendChild(card);
+  });
+</script>
+
+</body>
+</html>

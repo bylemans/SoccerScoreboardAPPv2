@@ -1,4 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { Capacitor } from '@capacitor/core';
+import { PushNotifications } from '@capacitor/push-notifications';
 import { requestNotificationPermission, onForegroundMessage } from '@/lib/firebase';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -16,10 +18,27 @@ export const usePushNotifications = () => {
   }, []);
 
   const initializePush = useCallback(async () => {
-    if (!isSupported || isInitializing) return null;
-    
+    if (isInitializing) return null;
     setIsInitializing(true);
+
     try {
+      if (Capacitor.isNativePlatform()) {
+        const perm = await PushNotifications.requestPermissions();
+        if (perm.receive === 'granted') {
+          await PushNotifications.register();
+          PushNotifications.addListener('registration', (token) => {
+            setFcmToken(token.value);
+            console.log('Native push token:', token.value);
+          });
+          PushNotifications.addListener('registrationError', (err) => {
+            console.error('Push registration error:', err);
+          });
+        }
+        return null;
+      }
+
+      if (!isSupported) return null;
+
       const token = await requestNotificationPermission();
       if (token) {
         setFcmToken(token);

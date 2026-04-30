@@ -1,10 +1,18 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
+import { Capacitor } from '@capacitor/core';
+import { KeepAwake } from '@capacitor-community/keep-awake';
 
 export const useWakeLock = () => {
   const [isActive, setIsActive] = useState(false);
   const wakeLockRef = useRef<WakeLockSentinel | null>(null);
 
   const request = useCallback(async () => {
+    if (Capacitor.isNativePlatform()) {
+      await KeepAwake.keepAwake();
+      setIsActive(true);
+      return true;
+    }
+
     if (!('wakeLock' in navigator)) {
       console.log('Wake Lock API not supported');
       return false;
@@ -28,6 +36,12 @@ export const useWakeLock = () => {
   }, []);
 
   const release = useCallback(async () => {
+    if (Capacitor.isNativePlatform()) {
+      await KeepAwake.allowSleep();
+      setIsActive(false);
+      return;
+    }
+
     if (wakeLockRef.current) {
       await wakeLockRef.current.release();
       wakeLockRef.current = null;
