@@ -5,6 +5,9 @@ on:
     branches: [main]
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: macos-latest
@@ -55,9 +58,21 @@ jobs:
           cd "${{ runner.temp }}"
           zip -r SoccerScoreboard.ipa Payload
 
-      - name: Upload IPA
+      - name: Upload IPA artifact
         uses: actions/upload-artifact@v4
         with:
           name: soccer-scoreboard-ios
           path: ${{ runner.temp }}/SoccerScoreboard.ipa
           retention-days: 30
+
+      - name: Publish to GitHub Releases
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release delete ios-latest --yes 2>/dev/null || true
+          git push origin :refs/tags/ios-latest 2>/dev/null || true
+          gh release create ios-latest \
+            --title "iOS – Latest Build" \
+            --notes "Latest iOS IPA. Install via Sideloadly on Windows — connect your iPhone via USB and sign with your Apple ID. Re-install every 7 days with a free Apple ID." \
+            --latest=false \
+            "${{ runner.temp }}/SoccerScoreboard.ipa#SoccerScoreboard.ipa"

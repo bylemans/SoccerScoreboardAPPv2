@@ -5,6 +5,9 @@ on:
     branches: [main]
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -43,9 +46,21 @@ jobs:
       - name: Build debug APK
         run: cd android && ./gradlew assembleDebug
 
-      - name: Upload APK
+      - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
           name: soccer-scoreboard-android
           path: android/app/build/outputs/apk/debug/app-debug.apk
           retention-days: 30
+
+      - name: Publish to GitHub Releases
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release delete android-latest --yes 2>/dev/null || true
+          git push origin :refs/tags/android-latest 2>/dev/null || true
+          gh release create android-latest \
+            --title "Android – Latest Build" \
+            --notes "Latest Android APK. Enable *Install from unknown sources* on your phone, then download and tap to install." \
+            --latest=false \
+            "android/app/build/outputs/apk/debug/app-debug.apk#soccer-scoreboard.apk"
