@@ -283,11 +283,14 @@ const Scoreboard = ({ format, onBack }: ScoreboardProps) => {
     }
     cancelScheduledAlarm();
     if (currentPeriod < format.periodCount) {
-      setCurrentPeriod((prev) => prev + 1);
+      const newPeriod = currentPeriod + 1;
+      setCurrentPeriod(newPeriod);
       setTimeRemaining(format.periodDuration * 60);
       setIsRunning(false);
       setIsTimerEnded(false);
       endTimeRef.current = null;
+      setHomeScore(periodScores.slice(0, newPeriod).reduce((sum, p) => sum + p.home, 0));
+      setAwayScore(periodScores.slice(0, newPeriod).reduce((sum, p) => sum + p.away, 0));
     }
   };
 
