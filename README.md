@@ -1,73 +1,93 @@
-# Welcome to your Lovable project
+# Soccer Scoreboard APP
 
-## Project info
+A mobile-first scoreboard app for youth soccer referees and coaches. Tracks scores, time, and cards across all youth formats — from U5 up to U21.
 
-**URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
+**Web app:** https://bylemans.github.io/SoccerScoreboardAPPv2/
 
-## How can I edit this code?
+---
 
-There are several ways of editing your application.
+## Features
 
-**Use Lovable**
+- **Live countdown timer** — counts down per period with a beep and vibration alarm when time is up
+- **Score tracking** — tap + or − to adjust the home and away score; team names are editable
+- **Per-period breakdown** — scores are tracked per half, quarter, or period separately, with a running total
+- **Multiple game formats** — supports U5, U7, U9, U10–13, U14–17, U19–21 with the correct period count and duration for each
+- **Yellow and red card tracking** — log cards by player number per team (U10 and older)
+- **Screen stay-on** — prevents the screen from dimming during an active game
+- **Push notifications** — get notified when a period ends even if the app is in the background
+- **Installable** — works as a PWA (Add to Home Screen) and is also distributed as a native Android APK and iOS IPA
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and start prompting.
+---
 
-Changes made via Lovable will be committed automatically to this repo.
+## Game Formats
 
-**Use your preferred IDE**
+| Format | Period type | Periods | Duration |
+|--------|------------|---------|----------|
+| U5 / U6 | Quarter | 4 | 10 min |
+| U7 / U8 | Quarter | 4 | 12 min |
+| U9 | Half | 2 | 20 min |
+| U10 – U13 | Half | 2 | 25 min |
+| U14 – U17 | Half | 2 | 35 min |
+| U19 – U21 | Half | 2 | 45 min |
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+---
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+## Install
 
-Follow these steps:
+### Web (PWA)
+Open the web app in your browser and tap **Add to Home Screen** (Safari on iPhone, Chrome on Android).
+
+### Android APK
+Download the latest APK from [Releases](https://github.com/bylemans/SoccerScoreboardAPPv2/releases) and sideload it — enable *Install from unknown sources* in your Android settings first.
+
+### iPhone IPA
+Download the latest IPA from [Releases](https://github.com/bylemans/SoccerScoreboardAPPv2/releases) and install it via [Sideloadly](https://sideloadly.io/) (free). Re-install every 7 days with a free Apple ID.
+
+---
+
+## Tech Stack
+
+- **React 18** + TypeScript
+- **Vite** — build tool
+- **Tailwind CSS** + shadcn/ui — styling and components
+- **Capacitor** — native Android and iOS wrapper
+- **Firebase** — push notifications (FCM)
+- **Supabase** — scheduled notification delivery
+- **GitHub Actions** — automated APK, IPA, and web builds
+- **GitHub Pages** — web app hosting
+
+---
+
+## Development
 
 ```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+# Install dependencies
+npm install
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
+# Start local dev server (http://localhost:8080)
 npm run dev
+
+# Build for web (GitHub Pages)
+npm run build
+
+# Sync web build into native projects
+npm run cap:sync
+
+# Open in Android Studio
+npm run cap:android
+
+# Open in Xcode (macOS only)
+npm run cap:ios
 ```
 
-**Edit a file directly in GitHub**
+### GitHub Actions
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+Pushing to `main` automatically triggers three workflows:
 
-**Use GitHub Codespaces**
+| Workflow | Runner | Output |
+|----------|--------|--------|
+| Deploy to GitHub Pages | ubuntu | Web app at `bylemans.github.io` |
+| Build Android APK | ubuntu | `soccer-scoreboard.apk` artifact |
+| Build iOS IPA | macos | `SoccerScoreboard.ipa` artifact |
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
-
-## What technologies are used for this project?
-
-This project is built with:
-
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
-
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+Required repository secrets: `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY`, `GOOGLE_SERVICES_JSON`.
