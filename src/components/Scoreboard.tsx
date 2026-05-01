@@ -343,12 +343,12 @@ const Scoreboard = ({ format, onBack }: ScoreboardProps) => {
     <div className="flex min-h-screen flex-col items-center bg-background px-4 py-6">
       {/* Header with back button and format display */}
       <div className="mb-4 w-full max-w-lg">
-        <div className="flex items-center justify-between rounded-xl bg-card px-4 py-3">
+        <div className="relative flex items-center justify-center rounded-xl bg-card px-4 py-3">
           <Button
             variant="ghost"
             size="sm"
             onClick={onBack}
-            className="gap-2 text-muted-foreground hover:text-foreground"
+            className="absolute left-2 gap-2 text-muted-foreground hover:text-foreground"
           >
             <ArrowLeft className="h-4 w-4" />
             Back
@@ -357,7 +357,7 @@ const Scoreboard = ({ format, onBack }: ScoreboardProps) => {
             <img src={soccerBallIcon} alt="Soccer Ball" className="h-6 w-6 brightness-0 invert" />
             Scoreboard
           </h1>
-          <div className="flex items-center gap-2">
+          <div className="absolute right-2 flex items-center">
             <span className="flex flex-col items-center rounded-full bg-primary/20 px-3 py-1 text-primary">
               <span className="block text-sm font-bold leading-none">{format.ageGroup}</span>
               <span className="block text-xs font-semibold leading-none">{format.format}</span>
@@ -380,12 +380,11 @@ const Scoreboard = ({ format, onBack }: ScoreboardProps) => {
         </div>
         
         {/* Timer Controls */}
-        <div className="flex justify-center gap-3">
+        <div className="grid grid-cols-4 gap-2">
           <Button
             onClick={() => {
               vibrate(15);
               if (isRunning) {
-                // Pausing: save remaining time and clear end time
                 if (alarmTimeoutRef.current) {
                   window.clearTimeout(alarmTimeoutRef.current);
                   alarmTimeoutRef.current = null;
@@ -393,57 +392,42 @@ const Scoreboard = ({ format, onBack }: ScoreboardProps) => {
                 cancelScheduledAlarm();
                 endTimeRef.current = null;
               } else {
-                // Starting: set new end time based on remaining time
                 endTimeRef.current = Date.now() + timeRemaining * 1000;
-                
-                // Schedule push notification for when timer ends
                 if (fcmToken) {
-                  const periodLabel = format.periodName === 'quarter' 
-                    ? `Quarter ${currentPeriod}` 
-                    : format.periodName === 'half' 
-                      ? `Half ${currentPeriod}` 
+                  const periodLabel = format.periodName === 'quarter'
+                    ? `Quarter ${currentPeriod}`
+                    : format.periodName === 'half'
+                      ? `Half ${currentPeriod}`
                       : `Period ${currentPeriod}`;
-                  scheduleAlarm(
-                    timeRemaining * 1000,
-                    '⏱️ Period Ended!',
-                    `${periodLabel} has ended`
-                  );
+                  scheduleAlarm(timeRemaining * 1000, '⏱️ Period Ended!', `${periodLabel} has ended`);
                 }
               }
               setIsRunning(!isRunning);
             }}
             disabled={timeRemaining === 0}
-            className="gap-2 bg-primary text-primary-foreground hover:bg-primary/80"
+            className="gap-1 bg-primary text-primary-foreground hover:bg-primary/80"
           >
-            {isRunning ? (
-              <>
-                <Pause className="h-4 w-4" /> Pause
-              </>
-            ) : (
-              <>
-                <Play className="h-4 w-4" /> Play
-              </>
-            )}
+            {isRunning ? <><Pause className="h-4 w-4" /><span className="hidden sm:inline">Pause</span></> : <><Play className="h-4 w-4" /><span className="hidden sm:inline">Play</span></>}
           </Button>
           <Button
             onClick={handlePrevPeriod}
             disabled={currentPeriod <= 1}
-            className="gap-2 bg-accent text-accent-foreground hover:bg-accent/80"
+            className="gap-1 bg-accent text-accent-foreground hover:bg-accent/80"
           >
-            <SkipBack className="h-4 w-4" /> Prev
+            <SkipBack className="h-4 w-4" /><span className="hidden sm:inline">Prev</span>
           </Button>
           <Button
             onClick={handleNextPeriod}
             disabled={currentPeriod >= format.periodCount}
-            className="gap-2 bg-accent text-accent-foreground hover:bg-accent/80"
+            className="gap-1 bg-accent text-accent-foreground hover:bg-accent/80"
           >
-            <SkipForward className="h-4 w-4" /> Next
+            <SkipForward className="h-4 w-4" /><span className="hidden sm:inline">Next</span>
           </Button>
           <Button
             onClick={handleReset}
-            className="gap-2 bg-destructive text-destructive-foreground hover:bg-destructive/80"
+            className="gap-1 bg-destructive text-destructive-foreground hover:bg-destructive/80"
           >
-            <RotateCcw className="h-4 w-4" /> Reset
+            <RotateCcw className="h-4 w-4" /><span className="hidden sm:inline">Reset</span>
           </Button>
         </div>
 
