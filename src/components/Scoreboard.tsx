@@ -115,38 +115,38 @@ const Scoreboard = ({ format, onBack }: ScoreboardProps) => {
     }
 
     // Also try to play audio (works when app is active)
-    try {
-      if (!audioContextRef.current) {
-        audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+    (async () => {
+      try {
+        if (!audioContextRef.current) {
+          audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+        }
+
+        const ctx = audioContextRef.current;
+
+        if (ctx.state === 'suspended') {
+          await ctx.resume();
+        }
+
+        for (let i = 0; i < 3; i++) {
+          const oscillator = ctx.createOscillator();
+          const gainNode = ctx.createGain();
+
+          oscillator.connect(gainNode);
+          gainNode.connect(ctx.destination);
+
+          oscillator.type = 'sine';
+          oscillator.frequency.setValueAtTime(880, ctx.currentTime + i * 0.4);
+
+          gainNode.gain.setValueAtTime(0.5, ctx.currentTime + i * 0.4);
+          gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + i * 0.4 + 0.3);
+
+          oscillator.start(ctx.currentTime + i * 0.4);
+          oscillator.stop(ctx.currentTime + i * 0.4 + 0.3);
+        }
+      } catch (e) {
+        console.log('Audio not available');
       }
-      
-      const ctx = audioContextRef.current;
-      
-      // Resume context if suspended (common after background)
-      if (ctx.state === 'suspended') {
-        ctx.resume();
-      }
-      
-      // Play three beeps for better audibility
-      for (let i = 0; i < 3; i++) {
-        const oscillator = ctx.createOscillator();
-        const gainNode = ctx.createGain();
-        
-        oscillator.connect(gainNode);
-        gainNode.connect(ctx.destination);
-        
-        oscillator.type = 'sine';
-        oscillator.frequency.setValueAtTime(880, ctx.currentTime + i * 0.4);
-        
-        gainNode.gain.setValueAtTime(0.5, ctx.currentTime + i * 0.4);
-        gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + i * 0.4 + 0.3);
-        
-        oscillator.start(ctx.currentTime + i * 0.4);
-        oscillator.stop(ctx.currentTime + i * 0.4 + 0.3);
-      }
-    } catch (e) {
-      console.log('Audio not available');
-    }
+    })();
   }, [vibrate, format.periodName, currentPeriod]);
 
   // Time-based timer that works even when app is in background (best-effort; browser-dependent)
