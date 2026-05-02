@@ -1,8 +1,7 @@
-project_id = "rbnithbyfgzrahwwyshl"
+project_id = "axkifvuudnusqrsvdsaw"
 
 [functions.send-push-notification]
 verify_jwt = false
 
 [functions.process-notifications]
 verify_jwt = false
-schedule = "* * * * *"
