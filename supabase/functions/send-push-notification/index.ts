@@ -96,10 +96,8 @@ async function sendFCM(serviceAccount: any, token: string, title: string, body: 
       android: {
         priority: "high",
         notification: {
-          channelId: "timer_alarm",
           priority: "max",
-          defaultVibrateTimings: false,
-          vibrateTimings: ["0.5s", "0.2s", "0.5s", "0.2s", "0.5s"],
+          defaultVibrateTimings: true,
         },
       },
     },

@@ -132,9 +132,7 @@ Deno.serve(async (req) => {
             android: {
               priority: "high",
               notification: {
-                channel_id: "timer_alarm",
-                default_vibrate_timings: false,
-                vibrate_timings: ["0.5s", "0.2s", "0.5s", "0.2s", "0.5s"],
+                default_vibrate_timings: true,
               },
             },
           },
